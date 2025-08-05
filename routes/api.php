@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\ClassroomController;
 use App\Http\Controllers\API\EkskulController;
+use App\Http\Controllers\API\SertifikationController;
 use App\Http\Controllers\API\StudentController;
 use App\Http\Controllers\StudiController;
 use Illuminate\Http\Request;
@@ -29,5 +30,10 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('students', StudentController::class);
-    Route::post('students/import', [EkskulController::class, 'importExcel']);
+    Route::post('students/import', [StudentController::class, 'importExcel']);
+    Route::get('students/classroom/{classroom_id}', [StudentController::class, 'byClassroom']);
+    Route::get('students/ekskul/{ekskul_id}', [StudentController::class, 'byEkskul']);
+});
+Route::middleware('auth:sanctum')->group(function() {
+    Route::apiResource('sertifikation', SertifikationController::class);
 });

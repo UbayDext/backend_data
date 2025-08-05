@@ -9,12 +9,12 @@ class Sertifikation extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'name',
+        'title',
         'student_id',
         'studi_id',
         'ekskul_id',
         'classroom_id',
-        'sertifikat_file',
+        'file_path',
     ];
     public function student() {
         return $this->belongsTo(Student::class);
@@ -24,5 +24,9 @@ class Sertifikation extends Model
     }
     public function ekskul() {
         return $this->belongsTo(Ekskul::class);
+    }
+ public function getFileUrlAttribute()
+    {
+        return $this->file_path ? asset('storage/' . $this->file_path) : null;
     }
 }

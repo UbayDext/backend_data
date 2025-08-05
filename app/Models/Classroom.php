@@ -22,6 +22,8 @@ class Classroom extends Model
     public function studi() {
         return $this->belongsTo(Studi::class);
     }
-   
+   public function sertifikation() {
+    return $this->hasMany(Sertifikation::class);
+   }
 
 }

@@ -159,4 +159,33 @@ class StudentController extends Controller
             'failed'   => $failed,
         ]);
     }
+
+    public function byClassroom($classroom_id)
+{
+    // Ambil semua siswa dengan classroom_id tertentu, + relasi classroom/ekskul/studi
+    $students = Student::with(['classroom', 'ekskul', 'studi'])
+                ->where('classroom_id', $classroom_id)
+                ->get();
+
+    if ($students->isEmpty()) {
+        return response()->json(['message' => 'Tidak ada siswa di kelas ini'], 404);
+    }
+
+    return response()->json($students);
+}
+
+public function byEkskul($ekskul_id)
+{
+    // Ambil semua siswa berdasarkan ekskul_id, dengan relasi classroom, ekskul, studi
+    $students = Student::with(['classroom', 'ekskul', 'studi'])
+                ->where('ekskul_id', $ekskul_id)
+                ->get();
+
+    if ($students->isEmpty()) {
+        return response()->json(['message' => 'Tidak ada siswa di ekskul ini'], 404);
+    }
+
+    return response()->json($students);
+}
+
 }

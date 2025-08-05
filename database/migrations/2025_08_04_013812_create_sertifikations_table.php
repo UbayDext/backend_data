@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('student_id')->constrained('students')->onDelete('cascade');
             $table->string('title');
-            $table->string('file_path')->nullable();
+            $table->string('file_path');
             $table->foreignId('ekskul_id')->nullable()->constrained('ekskuls')->onDelete('set null');
             $table->foreignId('studi_id')->nullable()->constrained('studis')->onDelete('set null');
             $table->foreignId('classroom_id')->nullable()->constrained('classrooms')->onDelete('set null');

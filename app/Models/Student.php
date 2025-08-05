@@ -24,6 +24,9 @@ class Student extends Model
     public function ekskul() {
         return $this->belongsTo(Ekskul::class);
     }
+    public function sertifikation() {
+    return $this->hasMany(Sertifikation::class);
+   }
     public function getRouteKeyName(): string
     {
         return 'name';
