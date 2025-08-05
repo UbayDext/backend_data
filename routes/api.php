@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\ClassroomController;
+use App\Http\Controllers\API\EkskulAttendancesController;
 use App\Http\Controllers\API\EkskulController;
 use App\Http\Controllers\API\SertifikationController;
 use App\Http\Controllers\API\StudentController;
@@ -36,4 +37,9 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 Route::middleware('auth:sanctum')->group(function() {
     Route::apiResource('sertifikation', SertifikationController::class);
+});
+Route::middleware('auth:sanctum')->group(function() {
+    Route::get('ekskul-attendance/daily', [EkskulAttendancesController::class, 'dailyAll']);
+    Route::post('ekskul-attendance/update', [EkskulAttendancesController::class, 'updateOrCreate']);
+    Route::get('ekskul-attendance/rekap', [EkskulAttendancesController::class, 'rekap']);
 });

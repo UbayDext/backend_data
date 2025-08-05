@@ -24,6 +24,9 @@ class Studi extends Model
     public function sertifikation() {
     return $this->hasMany(Sertifikation::class);
    }
+   public function ekskulAttendances() {
+    return $this->hasMany(EkskulAttendances::class);
+   }
     public function getRouteKeyName(): string
     {
         return 'nama_studi';

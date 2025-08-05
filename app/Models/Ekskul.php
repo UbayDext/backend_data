@@ -23,4 +23,7 @@ class Ekskul extends Model
     public function sertifikation() {
     return $this->hasMany(Sertifikation::class);
    }
+   public function ekskulAttendances() {
+    return $this->hasMany(EkskulAttendances::class);
+   }
 }

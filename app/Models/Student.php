@@ -16,7 +16,7 @@ class Student extends Model
     ];
 
     public function studi() {
-        return $this->belongsTo(Studi::class);
+        return $this->belongsTo(Studi::class, 'studi_id');
     }
     public function classroom() {
         return $this->belongsTo(Classroom::class);
@@ -26,6 +26,9 @@ class Student extends Model
     }
     public function sertifikation() {
     return $this->hasMany(Sertifikation::class);
+   }
+   public function ekskulAttendances() {
+    return $this->hasMany(EkskulAttendances::class);
    }
     public function getRouteKeyName(): string
     {
