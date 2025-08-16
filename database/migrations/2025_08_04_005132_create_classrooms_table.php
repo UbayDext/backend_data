@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('jumlah_siswa')->nullable();
-            $table->foreignId('studi_id')->nullable()->constrained('studis')->onDelete('set null');
+            $table->foreignId('studi_id')->nullable()->constrained('studis')->onDelete('cascade');
             $table->timestamps();
         });
     }

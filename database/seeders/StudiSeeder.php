@@ -14,6 +14,7 @@ class StudiSeeder extends Seeder
     public function run(): void
     {
         $studi = ['TK', 'SD', 'SMP'];
+        $file = [''];
 
         foreach ($studi as $nama_studi) {
             Studi::updateOrCreate(['nama_studi' => $nama_studi]);

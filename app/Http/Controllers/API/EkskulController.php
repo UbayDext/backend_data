@@ -11,10 +11,14 @@ class EkskulController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
-        return Ekskul::with('studi')->withCount('students')->get();
+    public function index(Request $request)
+{
+    $query = Ekskul::with('studi')->withCount('students');
+    if ($request->has('studi_id')) {
+        $query->where('studi_id', $request->studi_id);
     }
+    return $query->get();
+}
 
     public function EkskulByJenjang($nama_studi)
     {
@@ -81,6 +85,6 @@ class EkskulController extends Controller
     {
         $ekskul = Ekskul::findOrFail($id);
         $ekskul->delete();
-        return response()->json(null, 204);
+        return response()->json(['message' => 'Data berhasil di hapus']);
     }
 }

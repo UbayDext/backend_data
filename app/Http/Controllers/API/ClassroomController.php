@@ -11,10 +11,15 @@ class ClassroomController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
-        return Classroom::with('studi')->withCount('students')->get();
+    public function index(Request $request)
+{
+    $query = Classroom::with('studi')->withCount('students');
+    if ($request->has('studi_id')) {
+        $query->where('studi_id', $request->studi_id);
     }
+    return $query->get();
+}
+
 
    public function kelasByJenjang($nama_studi)
 {
@@ -82,6 +87,6 @@ class ClassroomController extends Controller
     {
         $kelas = Classroom::findOrFail($id);
         $kelas->delete();
-        return response()->json(null, 204);
+        return response()->json(['message' => 'kelas berhasil di hapus']);
     }
 }

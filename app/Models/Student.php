@@ -42,4 +42,9 @@ class Student extends Model
     {
         return $this->name . ' (' . $this->classroom->name . ')';
     }
+    public function raceParticipants()
+{
+    return $this->hasMany(\App\Models\IndividuRaceParticipan::class, 'student_id');
+    // atau IndividuRaceParticipant::class jika kamu pakai nama yg benar
+}
 }

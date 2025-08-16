@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('lombads', function (Blueprint $table) {
             $table->id();
+            $table->string('name');
+            $table->enum('status', ['Individu', 'Team']);
+            $table->unsignedBigInteger('ekskul_id');
+            $table->foreign('ekskul_id')->references('id')->on('ekskuls')->onDelete('cascade');
             $table->timestamps();
         });
     }

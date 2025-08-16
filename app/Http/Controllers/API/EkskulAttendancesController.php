@@ -9,43 +9,51 @@ use Illuminate\Http\Request;
 class EkskulAttendancesController extends Controller
 {
     // Tampilkan semua siswa peserta ekskul tertentu (filter kelas & jenjang) + status presensi
- public function dailyAll(Request $request)
+public function dailyAll(Request $request)
 {
-    $ekskulId  = $request->ekskul_id;
-    $tanggal   = $request->tanggal;
-    $kelasId   = $request->kelas_id;
-    $jenjangId = $request->studi_id;
+    // 1. Validasi input (ini sudah benar)
+    $request->validate([
+        'ekskul_id' => 'required|integer|exists:ekskuls,id',
+        'tanggal' => 'required|date_format:Y-m-d',
+        'studi_id' => 'nullable|integer|exists:studis,id',
+        'classroom_id' => 'nullable|integer|exists:classrooms,id',
+    ]);
 
-    // Ambil student_id yang pernah ikut ekskul ini
-    $studentIds = EkskulAttendances::where('ekskul_id', $ekskulId)
-        ->when($jenjangId, fn($q) => $q->where('studi_id', $jenjangId))
-        ->pluck('student_id')
-        ->unique();
+    // 2. Mulai query dari tabel STUDENTS, bukan attendances
+    $studentsQuery = Student::query();
 
-    // Ambil siswa dengan relasi
-    $students = Student::with(['classroom', 'studi'])
-        ->whereIn('id', $studentIds)
-        ->get();
+    // 3. Filter siswa berdasarkan ekskul yang mereka ikuti
+    $studentsQuery->where('ekskul_id', $request->input('ekskul_id'));
 
-    // Ambil data presensi siswa untuk ekskul dan tanggal tertentu
-    $attendance = EkskulAttendances::where('ekskul_id', $ekskulId)
-        ->where('tanggal', $tanggal)
-        ->when($jenjangId, fn($q) => $q->where('studi_id', $jenjangId))
-        ->get()
-        ->keyBy('student_id');
+    // Terapkan filter tambahan jika ada
+    if ($request->has('studi_id')) {
+        $studentsQuery->where('studi_id', $request->input('studi_id'));
+    }
+    if ($request->has('classroom_id')) {
+        $studentsQuery->where('classroom_id', $request->input('classroom_id'));
+    }
 
-    // Gabungkan student dan status
-    $result = $students->map(function($student) use ($attendance) {
-        $att = $attendance->get($student->id);
+    // 4. Ambil daftar siswa yang relevan, DAN sertakan (load) relasi absensi
+    //    NAMUN, relasi absensi itu HANYA untuk tanggal yang diminta.
+    $students = $studentsQuery->with(['ekskulAttendances' => function ($query) use ($request) {
+        $query->whereDate('tanggal', $request->input('tanggal'));
+    }])->get();
+
+    // 5. Transformasi data agar sesuai dengan yang dibutuhkan Flutter
+    //    Kita butuh format: { student_id, name, status }
+    $result = $students->map(function ($student) {
+        // Cek apakah ada data absensi untuk siswa ini (hasil dari 'with' di atas)
+        $attendance = $student->ekskulAttendances->first();
+
         return [
             'student_id' => $student->id,
-            'name'       => $student->name,
-            'classroom'  => $student->classroom->name ?? null,
-            'studi'      => $student->studi?->nama_studi ?? null,
-            'status'     => $att ? $att->status : null,
+            'name' => $student->name,
+            // Jika ada data absensi, ambil statusnya. Jika tidak, statusnya null.
+            'status' => $attendance ? $attendance->status : null,
         ];
     });
 
+    // 6. Kembalikan hasil yang sudah ditransformasi
     return response()->json($result);
 }
 
@@ -92,12 +100,12 @@ class EkskulAttendancesController extends Controller
         }
 
        if ($kelasId || $jenjangId) {
-    $query->when($kelasId, fn($q) =>
+        $query->when($kelasId, fn($q) =>
         $q->whereHas('student', fn($q2) => $q2->where('classroom_id', $kelasId))
-    );
-    $query->when($jenjangId, fn($q) =>
+            );
+        $query->when($jenjangId, fn($q) =>
         $q->whereHas('student', fn($q2) => $q2->where('studi_id', $jenjangId))
-    );
+            );
 }
         $data = $query->selectRaw("status, count(*) as jumlah")
             ->groupBy('status')
