@@ -17,6 +17,7 @@ class IndividuRaceParticipan extends Model
         'point4',
         'point5',
     ];
+        protected $table = 'individu_race_participans'; 
     protected $casts = [
         'point1'=>'integer',
         'point2'=>'integer',

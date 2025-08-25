@@ -26,4 +26,7 @@ class Ekskul extends Model
    public function ekskulAttendances() {
     return $this->hasMany(EkskulAttendances::class);
    }
+   public function lombad() {
+    return $this->hasMany(Lombad::class);
+   }
 }

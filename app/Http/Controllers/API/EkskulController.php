@@ -11,15 +11,16 @@ class EkskulController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+   public function index(Request $request)
 {
     $query = Ekskul::with('studi')->withCount('students');
     if ($request->has('studi_id')) {
         $query->where('studi_id', $request->studi_id);
     }
-    return $query->get();
-}
+    $ekskuls = $query->get();
 
+    return response()->json($ekskuls);
+}
     public function EkskulByJenjang($nama_studi)
     {
         $ekskul = Ekskul::with('studi')

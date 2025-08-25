@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('ekskul_attendances', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('student_id')->constrained('students')->onDelete('cascade');
+            $table->foreignId('student_id')->nullable()->constrained('students')->onDelete('set null');
             $table->foreignId('ekskul_id')->constrained('ekskuls')->onDelete('cascade');
             $table->foreignId('studi_id')->constrained('studis')->onDelete('cascade');
             $table->date('tanggal');

@@ -6,7 +6,7 @@ use App\Models\IndividuRaceParticipan;
 use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Validation\Rule;
 class IndividuRaceParticipansController extends Controller
 {
     public function index(IndividuRace $race)
@@ -152,13 +152,17 @@ class IndividuRaceParticipansController extends Controller
         return response()->json(['success' => true, 'message' => 'Peserta dihapus']);
     }
 
-    public function bulkScores(Request $request, IndividuRace $race)
+public function bulkScores(Request $request, IndividuRace $race)
 {
-    // Validasi input
     $pointRules = ['nullable','integer','between:0,95','multiple_of:5'];
+
     $data = $request->validate([
         'scores' => ['required','array','min:1'],
-        'scores.*.participant_id' => ['required','integer','exists:individu_race_participantss,id'],
+        'scores.*.participant_id' => [
+            'required','integer',
+            Rule::exists((new IndividuRaceParticipan)->getTable(), 'id')
+                ->where(fn($q) => $q->where('individu_race_id', $race->id)),
+        ],
         'scores.*.point1' => $pointRules,
         'scores.*.point2' => $pointRules,
         'scores.*.point3' => $pointRules,
@@ -166,36 +170,18 @@ class IndividuRaceParticipansController extends Controller
         'scores.*.point5' => $pointRules,
     ]);
 
-    try {
-        DB::transaction(function () use ($data, $race) {
+    DB::transaction(function () use ($data) {
+        foreach ($data['scores'] as $row) {
+            $p = IndividuRaceParticipan::findOrFail($row['participant_id']);
+            $payload = collect($row)
+                ->only(['point1','point2','point3','point4','point5'])
+                ->filter(fn($v) => !is_null($v))
+                ->toArray();
+            if ($payload) $p->fill($payload)->save();
+        }
+    });
 
-            $ids = collect($data['scores'])->pluck('participant_id')->unique()->values();
-            $raceMap = IndividuRaceParticipan::whereIn('id', $ids)
-                        ->pluck('individu_race_id', 'id');
-            $invalid = $raceMap->filter(fn($raceId) => (int)$raceId !== (int)$race->id)->keys();
-            if ($invalid->isNotEmpty()) {
-                throw new \RuntimeException('Ada participant bukan milik lomba ini: '.$invalid->implode(','));
-            }
-            foreach ($data['scores'] as $row) {
-                $p = IndividuRaceParticipan::findOrFail($row['participant_id']);
-
-                $payload = collect($row)
-                    ->only(['point1','point2','point3','point4','point5'])
-                    ->filter(fn($v) => !is_null($v))
-                    ->toArray();
-                if (!empty($payload)) {
-                    $p->fill($payload)->save();
-                }
-            }
-        });
-
-        return response()->json(['success' => true, 'message' => 'Bulk nilai disimpan']);
-    } catch (\Throwable $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Gagal bulk nilai: '.$e->getMessage(),
-        ], 422);
-    }
+    return response()->json(['success' => true, 'message' => 'Bulk nilai disimpan']);
 }
 
 }

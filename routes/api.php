@@ -9,6 +9,7 @@ use App\Http\Controllers\API\LombadController;
 use App\Http\Controllers\API\SertifikationController;
 use App\Http\Controllers\API\StudentController;
 use App\Http\Controllers\Api\TeamRaceController;
+use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\StudiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -17,6 +18,8 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('studi', StudiController::class)->only(['index', 'show']);
@@ -66,3 +69,16 @@ Route::middleware('auth:sanctum')->group(function() {
     Route::delete('team-race/{id}', [TeamRaceController::class, 'destroy']);
     Route::put('/team-races/{id}', [TeamRaceController::class, 'update']);
 });
+Route::middleware('auth:sanctum')->group(function() {
+    Route::get('/users',[UserController::class, 'index']);
+    Route::post('/users',[UserController::class, 'store']);
+    Route::get('/users/{user}',[UserController::class, 'show']);
+    Route::put('/users/{user}',[UserController::class, 'update']);
+    Route::patch('/users/{user}',[UserController::class, 'update']);
+    Route::delete('/users/{user}',[UserController::class, 'destroy']);
+    Route::get('/users/me',[UserController::class, 'me']);
+    Route::put('/users/me',[UserController::class, 'updateMe']);
+    Route::put('/users/me/password',[UserController::class, 'changeMyPassword']);
+    Route::put('/users/{user}/password',[UserController::class, 'changePassword']);
+});
+

@@ -25,7 +25,7 @@ class TeamRaceController extends Controller
                 'message' => 'Lombad tidak ditemukan.',
             ], 404);
         }
-
+        
         // Ambil semua team race yang berelasi dengan lombad_id
         $teamRaces = TeamRace::where('lombad_id', $lombad_id)->get();
 

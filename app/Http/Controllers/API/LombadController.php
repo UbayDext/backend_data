@@ -15,8 +15,13 @@ class LombadController extends Controller
         if ($request->has('ekskul_id')) {
             $query->where('ekskul_id', $request->ekskul_id);
         }
-        $lombas = $query->get();
-        return response()->json($lombas);
+        $lombas  = $query->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Daftar lomba berhasil diambil.',
+            'data' => $lombas,
+        ], 200);
     }
 
     // Tambah lomba
@@ -27,36 +32,63 @@ class LombadController extends Controller
             'status' => 'required|in:Individu,Team',
             'ekskul_id' => 'required|exists:ekskuls,id',
         ]);
+
         $lomba = Lombad::create($data);
-        return response()->json($lomba, 201);
+
+        // reload dengan relasi
+        $lomba = Lombad::with('ekskul')->find($lomba->id);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lomba berhasil ditambahkan.',
+            'data' => $lomba,
+        ], 201);
     }
 
     // Lihat detail lomba
     public function show($id)
     {
         $lomba = Lombad::with('ekskul')->findOrFail($id);
-        return response()->json($lomba);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Detail lomba berhasil diambil.',
+            'data' => $lomba,
+        ], 200);
     }
 
     // Update lomba
     public function update(Request $request, $id)
     {
         $lomba = Lombad::findOrFail($id);
+
         $data = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'status' => 'sometimes|required|in:Individu,Team',
             'ekskul_id' => 'sometimes|required|exists:ekskuls,id',
         ]);
+
         $lomba->update($data);
-        return response()->json($lomba);
+
+        // reload dengan relasi
+        $lomba = Lombad::with('ekskul')->find($lomba->id);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lomba berhasil diperbarui.',
+            'data' => $lomba,
+        ], 200);
     }
 
     // Hapus lomba
     public function destroy($id)
     {
-        $lomba = LombaD::findOrFail($id);
+        $lomba = Lombad::findOrFail($id);
         $lomba->delete();
-        return response()->json(['message' => 'Lomba deleted']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lomba berhasil dihapus.'
+        ], 200);
     }
 }
-
