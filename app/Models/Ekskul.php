@@ -13,6 +13,11 @@ class Ekskul extends Model
         'jumlah_siswa',
         'studi_id'
     ];
+     protected $casts = [
+        'id' => 'integer',
+        'studi_id' => 'integer',
+        'students_count' => 'integer',
+    ];
 
     public function students() {
         return $this->hasMany(Student::class);
