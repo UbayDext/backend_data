@@ -20,6 +20,7 @@ class EkskulAttendances extends Model
     protected $casts = [
         'student_id' => 'integer',
         'ekskul_id' => 'integer',
+        'studi_id' => 'integer',
     ];
 
     public function student() {
