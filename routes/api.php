@@ -33,12 +33,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('ekskul/jenjang/{nama_studi}', [EkskulController::class, 'EkskulByJenjang']);
 });
 Route::middleware('auth:sanctum')->group(function () {
+    // Import
     Route::post('students/import', [StudentController::class, 'importExcel']);
     Route::post('students/import_many', [StudentController::class, 'importMany']);
+
+    // Filter
     Route::get('students/classroom/{classroom_id}', [StudentController::class, 'byClassroom']);
     Route::get('students/ekskul/{ekskul_id}', [StudentController::class, 'byEkskul']);
+
+    // CRUD
     Route::apiResource('students', StudentController::class);
 });
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('sertifikations', SertifikationController::class);
     Route::get('sertifikations/by-student/{student}', [SertifikationController::class, 'byStudent']);

@@ -10,11 +10,12 @@ use App\Models\Ekskul;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
+
 class StudentController extends Controller
 {
     /**
      * GET /api/students
-     * Query: classroom_id, ekskul_id, studi_id
+     * Query: classroom_id, ekskul_id, studi_id, search
      */
     public function index(Request $request)
     {
@@ -29,8 +30,16 @@ class StudentController extends Controller
         if ($request->filled('studi_id')) {
             $q->where('studi_id', $request->integer('studi_id'));
         }
+        if ($request->filled('search')) {
+            $search = strtolower($request->search);
+            $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
+        }
 
-        return response()->json($q->get());
+        return response()->json([
+            'success' => true,
+            'message' => 'Daftar siswa berhasil diambil',
+            'data'    => $q->get()
+        ]);
     }
 
     /**
@@ -46,15 +55,15 @@ class StudentController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['status'=>'error','errors' => $validator->errors()], 422);
+            return response()->json(['success'=>false,'errors' => $validator->errors()], 422);
         }
 
         $student = Student::create($validator->validated());
 
         return response()->json([
-            'status'  => 'success',
+            'success' => true,
             'message' => 'Siswa berhasil ditambahkan',
-            'student' => $student
+            'data'    => $student->load(['classroom','ekskul','studi'])
         ], 201);
     }
 
@@ -65,149 +74,86 @@ class StudentController extends Controller
     {
         $student = Student::with(['classroom','ekskul','studi'])->find($id);
         if (!$student) {
-            return response()->json(['status'=>'error','message' => 'Siswa tidak ditemukan'], 404);
+            return response()->json(['success'=>false,'message' => 'Siswa tidak ditemukan'], 404);
         }
-        return response()->json($student);
+        return response()->json([
+            'success'=>true,
+            'message'=>'Detail siswa berhasil diambil',
+            'data'=>$student,
+        ]);
     }
 
     /**
      * PUT/PATCH /api/students/{id}
-     * FE kirim: name, classroom_name, ekskul_name
+     * FE bisa kirim: name, classroom_id+ekskul_id+studi_id atau classroom_name+ekskul_name
      */
     public function update(Request $request, $id)
-{
-    $student = Student::find($id);
-    if (!$student) {
-        return response()->json(['status'=>'error','message'=>'Siswa tidak ditemukan'], 404);
-    }
-
-    // ✅ Jalur langsung pakai ID
-    if ($request->filled('classroom_id') && $request->filled('ekskul_id') && $request->filled('studi_id')) {
-        $validator = Validator::make($request->all(), [
-            'name'         => 'required|string|max:255',
-            'classroom_id' => 'required|exists:classrooms,id',
-            'studi_id'     => 'required|exists:studis,id',
-            'ekskul_id'    => 'required|exists:ekskuls,id',
-        ]);
-        if ($validator->fails()) {
-            return response()->json(['status'=>'error','errors'=>$validator->errors()], 422);
+    {
+        $student = Student::find($id);
+        if (!$student) {
+            return response()->json(['success'=>false,'message'=>'Siswa tidak ditemukan'], 404);
         }
-        $student->update($validator->validated());
-        return response()->json(['status'=>'success','message'=>'Siswa berhasil diupdate','student'=>$student]);
-    }
 
-    // ♻️ Fallback: FE kirim nama
-    $classroom = Classroom::whereRaw('LOWER(name) = ?', [strtolower($request->input('classroom_name'))])->first();
-    $ekskul    = Ekskul::whereRaw('LOWER(nama_ekskul) = ?', [strtolower($request->input('ekskul_name'))])->first();
-    if (!$classroom || !$ekskul) {
-        return response()->json(['status'=>'error','message'=>'Classroom/Ekskul tidak valid'], 422);
-    }
-    $request->merge([
-        'classroom_id' => $classroom->id,
-        'ekskul_id'    => $ekskul->id,
-        'studi_id'     => $classroom->studi_id,
-    ]);
-    $validator = Validator::make($request->all(), [
-        'name'         => 'required|string|max:255',
-        'classroom_id' => 'required|exists:classrooms,id',
-        'studi_id'     => 'required|exists:studis,id',
-        'ekskul_id'    => 'required|exists:ekskuls,id',
-    ]);
-    if ($validator->fails()) {
-        return response()->json(['status'=>'error','errors'=>$validator->errors()], 422);
-    }
-    $student->update($validator->validated());
-    return response()->json(['status'=>'success','message'=>'Siswa berhasil diupdate','student'=>$student]);
-}
+        // Jalur langsung pakai ID
+        if ($request->filled('classroom_id') && $request->filled('ekskul_id') && $request->filled('studi_id')) {
+            $data = $request->validate([
+                'name'         => 'required|string|max:255',
+                'classroom_id' => 'required|exists:classrooms,id',
+                'studi_id'     => 'required|exists:studis,id',
+                'ekskul_id'    => 'required|exists:ekskuls,id',
+            ]);
+            $student->update($data);
+        }
+        else {
+            // Fallback: FE kirim nama kelas & ekskul
+            $classroom = Classroom::whereRaw('LOWER(name) = ?', [strtolower($request->input('classroom_name'))])->first();
+            $ekskul    = Ekskul::whereRaw('LOWER(nama_ekskul) = ?', [strtolower($request->input('ekskul_name'))])->first();
 
+            if (!$classroom || !$ekskul) {
+                return response()->json(['success'=>false,'message'=>'Classroom/Ekskul tidak valid'], 422);
+            }
+
+            $data = $request->validate([
+                'name' => 'required|string|max:255',
+            ]);
+
+            $student->update([
+                'name'         => $data['name'],
+                'classroom_id' => $classroom->id,
+                'ekskul_id'    => $ekskul->id,
+                'studi_id'     => $classroom->studi_id,
+            ]);
+        }
+
+        return response()->json([
+            'success'=>true,
+            'message'=>'Siswa berhasil diupdate',
+            'data'=>$student->load(['classroom','ekskul','studi'])
+        ]);
+    }
 
     /**
      * DELETE /api/students/{id}
      */
-   public function destroy($id)
-{
-    $student = Student::find($id);
-    if (!$student) {
-        return response()->json(['status'=>'error','message'=>'Siswa tidak ditemukan'], 404);
+    public function destroy($id)
+    {
+        $student = Student::find($id);
+        if (!$student) {
+            return response()->json(['success'=>false,'message'=>'Siswa tidak ditemukan'], 404);
+        }
+
+        DB::transaction(function () use ($student) {
+            $student->raceParticipants()->delete();
+            $student->delete();
+        });
+
+        return response()->json(['success'=>true,'message'=>'Siswa berhasil dihapus']);
     }
-
-    DB::transaction(function () use ($student) {
-        // hapus semua keikutsertaan siswa di lomba
-        $student->raceParticipants()->delete();
-        // lalu hapus siswanya
-        $student->delete();
-    });
-
-    return response()->json(['status'=>'success','message'=>'Siswa berhasil dihapus']);
-}
 
     /**
      * POST /api/students/import_many
-     * Body JSON: { students: [ {name, classroom_name, ekskul_name, studi_id?}, ... ] }
      */
-    public function importMany(Request $request)
-    {
-        $students = $request->input('students', []);
-        $imported = [];
-        $failed   = [];
-
-        foreach ($students as $i => $s) {
-            $name          = trim($s['name'] ?? '');
-            $classroomName = trim($s['classroom_name'] ?? '');
-            $ekskulName    = trim($s['ekskul_name'] ?? '');
-            $studiIdFromFE = $s['studi_id'] ?? $request->input('studi_id');
-
-            if ($name === '' || $classroomName === '' || $ekskulName === '') {
-                $failed[] = ['row' => $i + 1, 'error' => 'Data tidak lengkap'];
-                continue;
-            }
-
-            $classroomModel = Classroom::whereRaw('LOWER(name) = ?', [strtolower($classroomName)]);
-            if ($studiIdFromFE) {
-                $classroomModel->where('studi_id', (int)$studiIdFromFE);
-            }
-            $classroomModel = $classroomModel->first();
-
-            $ekskulModel = Ekskul::whereRaw('LOWER(nama_ekskul) = ?', [strtolower($ekskulName)])->first();
-            $studi_id    = $studiIdFromFE ?: ($classroomModel->studi_id ?? null);
-
-            if ($classroomModel && $ekskulModel && $studi_id) {
-                try {
-                    $imported[] = Student::create([
-                        'name'         => $name,
-                        'classroom_id' => $classroomModel->id,
-                        'studi_id'     => $studi_id,
-                        'ekskul_id'    => $ekskulModel->id,
-                    ]);
-                } catch (\Throwable $e) {
-                    $failed[] = ['row' => $i + 1, 'error' => $e->getMessage()];
-                }
-            } else {
-                $failed[] = [
-                    'row'       => $i + 1,
-                    'name'      => $name,
-                    'classroom' => $classroomName,
-                    'ekskul'    => $ekskulName,
-                    'error'     => !$classroomModel ? 'Classroom tidak ditemukan'
-                                   : (!$ekskulModel ? 'Ekskul tidak ditemukan'
-                                   : 'Studi ID tidak valid'),
-                ];
-            }
-        }
-
-        return response()->json([
-            'status'   => 'success',
-            'message'  => count($imported) . ' siswa berhasil diimport',
-            'imported' => $imported,
-            'failed'   => $failed,
-        ]);
-    }
-
-    /**
-     * POST /api/students/import
-     * Form-Data: file (xlsx/xls/csv), studi_id?  (untuk disambiguate kelas)
-     */
-    public function importExcel(Request $request)
+   public function importExcel(Request $request)
     {
         $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv|max:10240', // 10MB
@@ -291,6 +237,67 @@ class StudentController extends Controller
     }
 
     /**
+     * POST /api/students/import
+     */
+    public function importMany(Request $request)
+    {
+        $students = $request->input('students', []);
+        $imported = [];
+        $failed   = [];
+
+        foreach ($students as $i => $s) {
+            $name          = trim($s['name'] ?? '');
+            $classroomName = trim($s['classroom_name'] ?? '');
+            $ekskulName    = trim($s['ekskul_name'] ?? '');
+            $studiIdFromFE = $s['studi_id'] ?? $request->input('studi_id');
+
+            if ($name === '' || $classroomName === '' || $ekskulName === '') {
+                $failed[] = ['row' => $i + 1, 'error' => 'Data tidak lengkap'];
+                continue;
+            }
+
+            $classroomModel = Classroom::whereRaw('LOWER(name) = ?', [strtolower($classroomName)]);
+            if ($studiIdFromFE) {
+                $classroomModel->where('studi_id', (int)$studiIdFromFE);
+            }
+            $classroomModel = $classroomModel->first();
+
+            $ekskulModel = Ekskul::whereRaw('LOWER(nama_ekskul) = ?', [strtolower($ekskulName)])->first();
+            $studi_id    = $studiIdFromFE ?: ($classroomModel->studi_id ?? null);
+
+            if ($classroomModel && $ekskulModel && $studi_id) {
+                try {
+                    $imported[] = Student::create([
+                        'name'         => $name,
+                        'classroom_id' => $classroomModel->id,
+                        'studi_id'     => $studi_id,
+                        'ekskul_id'    => $ekskulModel->id,
+                    ]);
+                } catch (\Throwable $e) {
+                    $failed[] = ['row' => $i + 1, 'error' => $e->getMessage()];
+                }
+            } else {
+                $failed[] = [
+                    'row'       => $i + 1,
+                    'name'      => $name,
+                    'classroom' => $classroomName,
+                    'ekskul'    => $ekskulName,
+                    'error'     => !$classroomModel ? 'Classroom tidak ditemukan'
+                                   : (!$ekskulModel ? 'Ekskul tidak ditemukan'
+                                   : 'Studi ID tidak valid'),
+                ];
+            }
+        }
+
+        return response()->json([
+            'status'   => 'success',
+            'message'  => count($imported) . ' siswa berhasil diimport',
+            'imported' => $imported,
+            'failed'   => $failed,
+        ]);
+    }
+
+    /**
      * GET /api/students/classroom/{classroom_id}
      */
     public function byClassroom($classroom_id)
@@ -299,10 +306,14 @@ class StudentController extends Controller
             ->where('classroom_id', $classroom_id)->get();
 
         if ($students->isEmpty()) {
-            return response()->json(['status'=>'error','message' => 'Tidak ada siswa di kelas ini'], 404);
+            return response()->json(['success'=>false,'message' => 'Tidak ada siswa di kelas ini'], 404);
         }
 
-        return response()->json($students);
+        return response()->json([
+            'success'=>true,
+            'message'=>'Daftar siswa per kelas',
+            'data'=>$students
+        ]);
     }
 
     /**
@@ -314,9 +325,13 @@ class StudentController extends Controller
             ->where('ekskul_id', $ekskul_id)->get();
 
         if ($students->isEmpty()) {
-            return response()->json(['status'=>'error','message' => 'Tidak ada siswa di ekskul ini'], 404);
+            return response()->json(['success'=>false,'message' => 'Tidak ada siswa di ekskul ini'], 404);
         }
 
-        return response()->json($students);
+        return response()->json([
+            'success'=>true,
+            'message'=>'Daftar siswa per ekskul',
+            'data'=>$students
+        ]);
     }
 }
