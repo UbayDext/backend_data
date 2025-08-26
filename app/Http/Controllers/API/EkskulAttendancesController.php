@@ -16,7 +16,6 @@ public function dailyAll(Request $request)
         'ekskul_id' => 'required|integer|exists:ekskuls,id',
         'tanggal' => 'required|date_format:Y-m-d',
         'studi_id' => 'nullable|integer|exists:studis,id',
-        'classroom_id' => 'nullable|integer|exists:classrooms,id',
     ]);
 
     // 2. Mulai query dari tabel STUDENTS, bukan attendances
@@ -28,9 +27,6 @@ public function dailyAll(Request $request)
     // Terapkan filter tambahan jika ada
     if ($request->has('studi_id')) {
         $studentsQuery->where('studi_id', $request->input('studi_id'));
-    }
-    if ($request->has('classroom_id')) {
-        $studentsQuery->where('classroom_id', $request->input('classroom_id'));
     }
 
     // 4. Ambil daftar siswa yang relevan, DAN sertakan (load) relasi absensi
