@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Ekskul;
 use App\Models\Lombad;
 use Illuminate\Http\Request;
 
@@ -10,19 +11,22 @@ class LombadController extends Controller
 {
     // List semua lomba
     public function index(Request $request)
-    {
-        $query = Lombad::with('ekskul');
-        if ($request->has('ekskul_id')) {
-            $query->where('ekskul_id', $request->ekskul_id);
-        }
-        $lombas  = $query->get();
+{
+    $query = Lombad::with('ekskul');
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Daftar lomba berhasil diambil.',
-            'data' => $lombas,
-        ], 200);
+    if ($request->has('ekskul_id')) {
+        $query->where('ekskul_id', $request->ekskul_id);
     }
+
+    $lombas  = $query->get();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Daftar lomba berhasil diambil.',
+        'data' => $lombas,
+    ], 200);
+}
+
 
     // Tambah lomba
     public function store(Request $request)
