@@ -15,6 +15,12 @@ class Student extends Model
         'ekskul_id',
     ];
 
+    protected $casts = [
+        'id' => 'integer',
+        'classroom_id' => 'integer',
+        'studi_id' => 'integer',
+        'ekskul_id' => 'integer'
+    ];
     public function studi() {
         return $this->belongsTo(Studi::class, 'studi_id');
     }
