@@ -66,6 +66,8 @@ Route::middleware('auth:sanctum')->group(function() {
     Route::get('team-race/{id}', [TeamRaceController::class, 'show']);
     Route::post('team-races', [TeamRaceController::class, 'store']);
     Route::put('/team-races/{id}/set-champion', [TeamRaceController::class, 'setChampion']);
+    Route::post('/team-races/{id}/set-winner-match1', [TeamRaceController::class, 'setWinnerMatch1']);
+    Route::post('/team-races/{id}/set-winner-match2', [TeamRaceController::class, 'setWinnerMatch2']);
     Route::delete('team-race/{id}', [TeamRaceController::class, 'destroy']);
     Route::put('/team-races/{id}', [TeamRaceController::class, 'update']);
 });

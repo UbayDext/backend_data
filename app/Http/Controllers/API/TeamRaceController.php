@@ -12,71 +12,60 @@ use Illuminate\Validation\Rule;
 class TeamRaceController extends Controller
 {
     /**
-     * Menampilkan semua grup tim berdasarkan ID Lomba.
-     * URL: GET /api/lombads/{lombad_id}/team-races
+     * GET: semua grup tim berdasarkan lombad_id
      */
     public function index($lombad_id)
     {
-        // Cek apakah lombad (kompetisi) ada
         $lombad = Lombad::find($lombad_id);
         if (!$lombad) {
             return response()->json([
                 'success' => false,
-                'message' => 'Lombad tidak ditemukan.',
+                'message' => 'Lomba tidak ditemukan',
             ], 404);
         }
-        
-        // Ambil semua team race yang berelasi dengan lombad_id
+
         $teamRaces = TeamRace::where('lombad_id', $lombad_id)->get();
 
         return response()->json([
             'success' => true,
-            'message' => 'Daftar grup tim berhasil diambil.',
-            'data' => $teamRaces
+            'message' => 'Daftar grup tim berhasil diambil',
+            'data' => $teamRaces,
         ], 200);
     }
 
     /**
-     * Menyimpan data grup tim baru.
-     * URL: POST /api/team-races
+     * POST: tambah grup tim baru
      */
     public function store(Request $request)
     {
-        // Validasi input dari request
         $validator = Validator::make($request->all(), [
             'name_group' => 'required|string|max:255',
             'name_team1' => 'required|string|max:255',
             'name_team2' => 'required|string|max:255',
             'name_team3' => 'required|string|max:255',
             'name_team4' => 'required|string|max:255',
-            'name_team5' => 'required|string|max:255',
-            'lombad_id'  => 'required|exists:lombads,id', // Pastikan lombad_id ada di tabel lombads
+            'lombad_id'  => 'required|exists:lombads,id',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validasi gagal.',
-                'errors' => $validator->errors()
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors(),
             ], 422);
         }
 
-
-        $data = $request->all();
-        $data['champion'] = 'Belum ada pemenang'; // Sesuai dengan UI Anda
-
-        $teamRace = TeamRace::create($data);
+        $teamRace = TeamRace::create($request->all());
 
         return response()->json([
             'success' => true,
-            'message' => 'Grup tim berhasil ditambahkan.',
-            'data' => $teamRace
-        ], 201); // 201 Created
+            'message' => 'Grup tim berhasil ditambahkan',
+            'data' => $teamRace,
+        ], 201);
     }
 
     /**
-     * Menampilkan detail satu grup tim.
-     * URL: GET /api/team-races/{id}
+     * GET: detail grup tim
      */
     public function show($id)
     {
@@ -85,120 +74,178 @@ class TeamRaceController extends Controller
         if (!$teamRace) {
             return response()->json([
                 'success' => false,
-                'message' => 'Grup tim tidak ditemukan.',
+                'message' => 'Grup tim tidak ditemukan',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Detail grup tim berhasil diambil.',
-            'data' => $teamRace
+            'message' => 'Detail grup tim berhasil diambil',
+            'data' => $teamRace,
         ], 200);
     }
 
     /**
-     * Mengupdate data champion pada grup tim.
-     * URL: PUT /api/team-races/{id}/set-champion
+     * POST: set winner match 1
      */
-    public function setChampion(Request $request, $id)
+    public function setWinnerMatch1(Request $request, $id)
     {
         $teamRace = TeamRace::find($id);
-
         if (!$teamRace) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Grup tim tidak ditemukan.',
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Grup tim tidak ditemukan'], 404);
         }
 
-        // Validasi bahwa nama champion harus salah satu dari 5 tim yang ada
         $validator = Validator::make($request->all(), [
-            'champion' => [
+            'winner_match1' => [
                 'required',
                 'string',
-                Rule::in([
-                    trim($teamRace->name_team1),
-                    trim($teamRace->name_team2),
-                    trim($teamRace->name_team3),
-                    trim($teamRace->name_team4),
-                    trim($teamRace->name_team5),
-                ]),
+                Rule::in([trim($teamRace->name_team1), trim($teamRace->name_team2)]),
             ],
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Nama champion tidak valid atau tidak ada dalam grup ini.',
-                'errors' => $validator->errors()
+                'message' => 'Pemenang tidak valid',
+                'errors' => $validator->errors(),
             ], 422);
         }
 
-        // Update hanya field champion
+        $teamRace->winner_match1 = $request->winner_match1;
+        $teamRace->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pemenang match 1 ditentukan',
+            'data' => $teamRace,
+        ], 200);
+    }
+
+    /**
+     * POST: set winner match 2
+     */
+    public function setWinnerMatch2(Request $request, $id)
+    {
+        $teamRace = TeamRace::find($id);
+        if (!$teamRace) {
+            return response()->json(['success' => false, 'message' => 'Grup tim tidak ditemukan'], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'winner_match2' => [
+                'required',
+                'string',
+                Rule::in([trim($teamRace->name_team3), trim($teamRace->name_team4)]),
+            ],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pemenang tidak valid',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $teamRace->winner_match2 = $request->winner_match2; // ✅ fix bug
+        $teamRace->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pemenang match 2 ditentukan',
+            'data' => $teamRace,
+        ], 200);
+    }
+
+    /**
+     * PUT: set champion dari semifinal winners
+     */
+    public function setChampion(Request $request, $id)
+    {
+        $teamRace = TeamRace::find($id);
+        if (!$teamRace) {
+            return response()->json(['success' => false, 'message' => 'Grup tim tidak ditemukan'], 404);
+        }
+
+        if (!$teamRace->winner_match1 || !$teamRace->winner_match2) {
+            return response()->json(['success' => false, 'message' => 'Pemenang semifinal belum ditentukan'], 400);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'champion' => [
+                'required',
+                'string',
+                Rule::in([$teamRace->winner_match1, $teamRace->winner_match2]),
+            ],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Champion tidak valid',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
         $teamRace->champion = $request->champion;
         $teamRace->save();
 
         return response()->json([
             'success' => true,
-            'message' => 'Juara berhasil ditentukan.',
-            'data' => $teamRace
+            'message' => 'Champion berhasil ditentukan',
+            'data' => $teamRace,
         ], 200);
     }
 
-  public function update(Request $request, $id)
-{
-    // 1. Cari data yang akan diupdate
-    $teamRace = TeamRace::find($id);
+    /**
+     * PUT: update data grup tim (bisa ubah nama group atau tim)
+     */
+    public function update(Request $request, $id)
+    {
+        $teamRace = TeamRace::find($id);
+        if (!$teamRace) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Grup tim tidak ditemukan',
+            ], 404);
+        }
 
-    // Jika data tidak ditemukan, kembalikan error 404
-    if (!$teamRace) {
+        $validator = Validator::make($request->all(), [
+            'name_group' => 'sometimes|required|string|max:255',
+            'name_team1' => 'sometimes|required|string|max:255',
+            'name_team2' => 'sometimes|required|string|max:255',
+            'name_team3' => 'sometimes|required|string|max:255',
+            'name_team4' => 'sometimes|required|string|max:255',
+            'lombad_id'  => 'sometimes|required|exists:lombads,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $teamRace->update($request->all());
+
         return response()->json([
-            'success' => false,
-            'message' => 'Grup tim tidak ditemukan.',
-        ], 404);
+            'success' => true,
+            'message' => 'Grup tim berhasil diperbarui',
+            'data' => $teamRace,
+        ], 200);
     }
-
-    $validator = Validator::make($request->all(), [
-        'name_group' => 'sometimes|required|string|max:255',
-        'name_team1' => 'sometimes|required|string|max:255',
-        'name_team2' => 'sometimes|required|string|max:255',
-        'name_team3' => 'sometimes|required|string|max:255',
-        'name_team4' => 'sometimes|required|string|max:255',
-        'name_team5' => 'sometimes|required|string|max:255',
-        'lombad_id'  => 'sometimes|required|exists:lombads,id',
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Validasi gagal.',
-            'errors' => $validator->errors()
-        ], 422);
-    }
-
-    // 3. Lakukan update data
-    $teamRace->update($request->all());
-
-    // 4. Kembalikan respons sukses dengan data yang sudah diperbarui
-    return response()->json([
-        'success' => true,
-        'message' => 'Grup tim berhasil diperbarui.',
-        'data' => $teamRace
-    ], 200); // 200 OK
-}
 
     /**
-     * Menghapus grup tim.
-     * URL: DELETE /api/team-races/{id}
+     * DELETE: hapus grup tim
      */
     public function destroy($id)
     {
         $teamRace = TeamRace::find($id);
-
         if (!$teamRace) {
             return response()->json([
                 'success' => false,
-                'message' => 'Grup tim tidak ditemukan.',
+                'message' => 'Grup tim tidak ditemukan',
             ], 404);
         }
 
@@ -206,7 +253,7 @@ class TeamRaceController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Grup tim berhasil dihapus.',
+            'message' => 'Grup tim berhasil dihapus',
         ], 200);
     }
 }

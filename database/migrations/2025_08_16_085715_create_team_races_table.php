@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -18,9 +17,13 @@ return new class extends Migration
             $table->string('name_team2');
             $table->string('name_team3');
             $table->string('name_team4');
-            $table->string('name_team5');
             $table->foreignId('lombad_id')->constrained('lombads')->cascadeOnDelete();
-            $table->string('champion');
+
+            // tambahkan langsung di sini
+            $table->string('winner_match1')->nullable();
+            $table->string('winner_match2')->nullable();
+            $table->string('champion')->nullable();
+
             $table->timestamps();
         });
     }

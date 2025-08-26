@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->foreignId('studi_id')->nullable()->constrained('studis')->onDelete('cascade');
             $table->foreignId('classroom_id')->nullable()->constrained('classrooms')->onDelete('cascade');
-            $table->foreignId('ekskul_id')->nullable()->constrained('ekskuls')->onDelete('cascade');
+            $table->foreignId('ekskul_id')->nullable()->constrained('ekskuls')->onDelete('set null');
             $table->timestamps();
         });
     }

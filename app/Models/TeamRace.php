@@ -16,12 +16,29 @@ class TeamRace extends Model
         'name_team2',
         'name_team3',
         'name_team4',
-        'name_team5',
         'lombad_id',
-        'champion'
+        'winner_match1',
+        'winner_match2',
+        'champion',
     ];
 
     public function lombad() {
         return $this->belongsTo(Lombad::class);
+    }
+
+       public function semifinalTeams()
+    {
+        return [
+            [$this->name_team1, $this->name_team2],
+            [$this->name_team3, $this->name_team4],
+        ];
+    }
+
+     public function finalTeams()
+    {
+        return [
+            $this->winner_match1,
+            $this->winner_match2,
+        ];
     }
 }
