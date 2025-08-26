@@ -17,6 +17,11 @@ class EkskulAttendances extends Model
     'status',
     ];
 
+    protected $casts = [
+        'student_id' => 'integer',
+        'ekskul_id' => 'integer',
+    ];
+
     public function student() {
         return $this->belongsTo(Student::class, 'student_id');
     }
