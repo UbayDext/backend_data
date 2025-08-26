@@ -114,38 +114,30 @@ class IndividuRaceParticipansController extends Controller
      * PUT /api/individurace/{race}/participants/{participant}
      * Body: { "point1": 50, ... } // 0–95 kelipatan 5
      */
-    public function update(Request $request, IndividuRace $race, IndividuRaceParticipan $participant)
-    {
-       if ($participant->individu_race_id !== $race->id) {
+   public function update(Request $request, IndividuRace $race, $participantId)
+{
+    $participant = IndividuRaceParticipan::where('individu_race_id', $race->id)
+        ->where('id', $participantId)
+        ->firstOrFail();
+
+    $rules = ['nullable','integer','between:0,95','multiple_of:5'];
+    $validated = $request->validate([
+        'point1' => $rules, 'point2' => $rules, 'point3' => $rules,
+        'point4' => $rules, 'point5' => $rules,
+    ]);
+
+    $participant->fill($validated)->save();
+
     return response()->json([
-        'success' => false,
-        'message' => 'Peserta tidak sesuai lomba',
-        'debug'   => [
-            'participant_race_id' => $participant->individu_race_id,
-            'race_id'             => $race->id,
+        'success' => true,
+        'message' => 'Nilai diperbarui',
+        'data'    => [
+            'id' => $participant->id,
+            'total' => $participant->point1 + $participant->point2 + $participant->point3 + $participant->point4 + $participant->point5
         ]
-    ], 404);
+    ]);
 }
 
-
-        $rules = ['nullable', 'integer', 'between:0,95', 'multiple_of:5'];
-        $validated = $request->validate([
-            'point1' => $rules, 'point2' => $rules, 'point3' => $rules,
-            'point4' => $rules, 'point5' => $rules,
-        ]);
-
-        try {
-            $participant->fill($validated)->save();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Nilai diperbarui',
-                'data'    => ['id' => $participant->id, 'total' => $participant->point1 + $participant->point2 + $participant->point3 + $participant->point4 + $participant->point5]
-            ]);
-        } catch (\Throwable $e) {
-            return response()->json(['success' => false, 'message' => 'Gagal update nilai: '.$e->getMessage()], 422);
-        }
-    }
 
     /**
      * DELETE /api/individurace/{race}/participants/{participant}
