@@ -15,6 +15,13 @@ class Sertifikation extends Model
         'title','student_id','studi_id','ekskul_id','classroom_id','file_path',
     ];
 
+    protected $casts = [
+        'student_id' => 'integer',
+        'ekskul_id' => 'integer',
+        'classroom_id' => 'integer',
+        'studi_id' => 'integer'
+    ];
+
     protected $appends = ['file_url']; // <-- agar otomatis ikut di JSON
 
     // Relations
