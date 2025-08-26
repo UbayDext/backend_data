@@ -16,7 +16,7 @@ class Lombad extends Model
     ];
 
     protected $casts = [
-        'ekskul_id'
+        'ekskul_id' => 'integer',
     ];
 
     public function ekskul() {
