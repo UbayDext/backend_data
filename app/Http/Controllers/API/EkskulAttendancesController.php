@@ -58,30 +58,33 @@ public function dailyAll(Request $request)
 }
 
     // Fast update status
-    public function updateOrCreate(Request $request)
-    {
-        $request->validate([
-            'student_id' => 'required|exists:students,id',
-            'ekskul_id'  => 'required|exists:ekskuls,id',
-            'tanggal'    => 'required|date',
-            'status'     => 'required|in:H,I,S,A',
-            'studi_id'   => 'required|exists:studis,id'
-        ]);
+  public function updateOrCreate(Request $request)
+{
+    $request->validate([
+        'student_id'   => 'required|exists:students,id',
+        'ekskul_id'    => 'required|exists:ekskuls,id',
+        'tanggal'      => 'required|date',
+        'status'       => 'required|in:H,I,S,A',
+        'studi_id'     => 'required|exists:studis,id',
+        'classroom_id' => 'required|exists:classrooms,id',
+    ]);
 
-        $absen = EkskulAttendances::updateOrCreate(
-            [
-                'student_id' => $request->student_id,
-                'ekskul_id'  => $request->ekskul_id,
-                'tanggal'    => $request->tanggal,
-                'studi_id'   => $request->studi_id
-            ],
-            [
-                'status'     => $request->status,
-            ]
-        );
+    $absen = EkskulAttendances::updateOrCreate(
+        [
+            'student_id'   => $request->student_id,
+            'ekskul_id'    => $request->ekskul_id,
+            'tanggal'      => $request->tanggal,
+            'studi_id'     => $request->studi_id,
+            'classroom_id' => $request->classroom_id,
+        ],
+        [
+            'status'       => $request->status,
+        ]
+    );
 
-        return response()->json($absen);
-    }
+    return response()->json($absen);
+}
+
 
     // Rekap harian/bulanan (optional: bisa tambah filter kelas/jenjang)
     public function rekap(Request $request)

@@ -21,6 +21,7 @@ class EkskulAttendances extends Model
         'student_id' => 'integer',
         'ekskul_id' => 'integer',
         'studi_id' => 'integer',
+        'tanggal' => 'date',
     ];
 
     public function student() {
