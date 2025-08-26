@@ -89,7 +89,7 @@ public function dailyAll(Request $request)
     {
         $ekskulId  = $request->ekskul_id;
         $kelasId   = $request->kelas_id;
-        $jenjangId = $request->jenjang_id;
+        $studiId = $request->studi_id;
 
         $query = EkskulAttendances::where('ekskul_id', $ekskulId);
 
@@ -100,12 +100,12 @@ public function dailyAll(Request $request)
             $query->where('tanggal', $request->tanggal);
         }
 
-       if ($kelasId || $jenjangId) {
+       if ($kelasId || $studiId) {
         $query->when($kelasId, fn($q) =>
         $q->whereHas('student', fn($q2) => $q2->where('classroom_id', $kelasId))
             );
-        $query->when($jenjangId, fn($q) =>
-        $q->whereHas('student', fn($q2) => $q2->where('studi_id', $jenjangId))
+        $query->when($studiId, fn($q) =>
+        $q->whereHas('student', fn($q2) => $q2->where('studi_id', $studiId))
             );
 }
         $data = $query->selectRaw("status, count(*) as jumlah")
