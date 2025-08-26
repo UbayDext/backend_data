@@ -66,7 +66,6 @@ public function dailyAll(Request $request)
         'tanggal'      => 'required|date',
         'status'       => 'required|in:H,I,S,A',
         'studi_id'     => 'required|exists:studis,id',
-        'classroom_id' => 'required|exists:classrooms,id',
     ]);
 
     $absen = EkskulAttendances::updateOrCreate(
@@ -75,7 +74,6 @@ public function dailyAll(Request $request)
             'ekskul_id'    => $request->ekskul_id,
             'tanggal'      => $request->tanggal,
             'studi_id'     => $request->studi_id,
-            'classroom_id' => $request->classroom_id,
         ],
         [
             'status'       => $request->status,
