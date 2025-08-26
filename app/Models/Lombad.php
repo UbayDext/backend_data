@@ -15,6 +15,10 @@ class Lombad extends Model
         'ekskul_id'
     ];
 
+    protected $casts = [
+        'ekskul_id'
+    ];
+
     public function ekskul() {
         return $this->belongsTo(Ekskul::class);
     }
