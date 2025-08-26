@@ -116,9 +116,17 @@ class IndividuRaceParticipansController extends Controller
      */
     public function update(Request $request, IndividuRace $race, IndividuRaceParticipan $participant)
     {
-        if ($participant->individu_race_id !== $race->id) {
-            return response()->json(['success' => false, 'message' => 'Peserta tidak sesuai lomba'], 404);
-        }
+       if ($participant->individu_race_id !== $race->id) {
+    return response()->json([
+        'success' => false,
+        'message' => 'Peserta tidak sesuai lomba',
+        'debug'   => [
+            'participant_race_id' => $participant->individu_race_id,
+            'race_id'             => $race->id,
+        ]
+    ], 404);
+}
+
 
         $rules = ['nullable', 'integer', 'between:0,95', 'multiple_of:5'];
         $validated = $request->validate([
