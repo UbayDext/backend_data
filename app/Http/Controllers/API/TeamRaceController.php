@@ -253,7 +253,7 @@ class TeamRaceController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Grup tim berhasil dihapus',
+            'message' => 'Grup tim  dihapus',
         ], 200);
     }
 }
