@@ -217,4 +217,23 @@ class UserController extends Controller
             return $this->fail($e);
         }
     }
+    private function basicPayload(User $u): array
+{
+    return [
+        'id'       => $u->id,
+        'username' => $u->username ?? $u->name, // fallback ke name jika kolom username tidak ada
+        'email'    => $u->email,
+        'role'     => $u->role ?? null,
+    ];
+}
+
+public function meBasic(Request $request)
+{
+    try {
+        $me = $request->user();
+        return $this->ok('Info dasar user', $this->basicPayload($me));
+    } catch (\Throwable $e) {
+        return $this->fail($e);
+    }
+}
 }
