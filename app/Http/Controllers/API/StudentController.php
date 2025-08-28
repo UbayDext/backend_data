@@ -10,7 +10,7 @@ use App\Models\Ekskul;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Validation\ValidationException;
 class StudentController extends Controller
 {
     /**
@@ -239,63 +239,53 @@ class StudentController extends Controller
     /**
      * POST /api/students/import
      */
-    public function importMany(Request $request)
-    {
-        $students = $request->input('students', []);
+public function importMany(Request $request)
+{
+    try {
+        $validated = $request->validate([
+            'students' => ['required','array','min:1'],
+            'students.*.name'         => ['required','string','max:255'],
+            'students.*.classroom_id' => ['required','integer','exists:classrooms,id'],
+            'students.*.studi_id'     => ['required','integer','exists:studis,id'],
+            'students.*.ekskul_id'    => ['nullable','integer','exists:ekskuls,id'],
+        ]);
+
         $imported = [];
-        $failed   = [];
+        $failed = [];
 
-        foreach ($students as $i => $s) {
-            $name          = trim($s['name'] ?? '');
-            $classroomName = trim($s['classroom_name'] ?? '');
-            $ekskulName    = trim($s['ekskul_name'] ?? '');
-            $studiIdFromFE = $s['studi_id'] ?? $request->input('studi_id');
-
-            if ($name === '' || $classroomName === '' || $ekskulName === '') {
-                $failed[] = ['row' => $i + 1, 'error' => 'Data tidak lengkap'];
-                continue;
-            }
-
-            $classroomModel = Classroom::whereRaw('LOWER(name) = ?', [strtolower($classroomName)]);
-            if ($studiIdFromFE) {
-                $classroomModel->where('studi_id', (int)$studiIdFromFE);
-            }
-            $classroomModel = $classroomModel->first();
-
-            $ekskulModel = Ekskul::whereRaw('LOWER(nama_ekskul) = ?', [strtolower($ekskulName)])->first();
-            $studi_id    = $studiIdFromFE ?: ($classroomModel->studi_id ?? null);
-
-            if ($classroomModel && $ekskulModel && $studi_id) {
-                try {
-                    $imported[] = Student::create([
-                        'name'         => $name,
-                        'classroom_id' => $classroomModel->id,
-                        'studi_id'     => $studi_id,
-                        'ekskul_id'    => $ekskulModel->id,
-                    ]);
-                } catch (\Throwable $e) {
-                    $failed[] = ['row' => $i + 1, 'error' => $e->getMessage()];
-                }
-            } else {
-                $failed[] = [
-                    'row'       => $i + 1,
-                    'name'      => $name,
-                    'classroom' => $classroomName,
-                    'ekskul'    => $ekskulName,
-                    'error'     => !$classroomModel ? 'Classroom tidak ditemukan'
-                                   : (!$ekskulModel ? 'Ekskul tidak ditemukan'
-                                   : 'Studi ID tidak valid'),
-                ];
+        foreach ($validated['students'] as $row) {
+            try {
+                $student = Student::create([
+                    'name'         => $row['name'],
+                    'classroom_id' => $row['classroom_id'],
+                    'studi_id'     => $row['studi_id'],
+                    'ekskul_id'    => $row['ekskul_id'] ?? null,
+                ]);
+                $imported[] = $student->id;
+            } catch (\Throwable $e) {
+                $failed[] = ['row' => $row, 'error' => $e->getMessage()];
             }
         }
 
         return response()->json([
             'status'   => 'success',
-            'message'  => count($imported) . ' siswa berhasil diimport',
+            'message'  => sprintf('%d siswa berhasil diimpor', count($imported)),
             'imported' => $imported,
             'failed'   => $failed,
         ]);
+    } catch (ValidationException $e) {
+        return response()->json([
+            'status'  => 'error',
+            'message' => 'Validasi gagal',
+            'errors'  => $e->errors(),
+        ], 422);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'status'  => 'error',
+            'message' => config('app.debug') ? $e->getMessage() : 'Server error',
+        ], 500);
     }
+}
 
     /**
      * GET /api/students/classroom/{classroom_id}
