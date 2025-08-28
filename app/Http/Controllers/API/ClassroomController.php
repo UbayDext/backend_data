@@ -13,12 +13,35 @@ class ClassroomController extends Controller
      */
     public function index(Request $request)
 {
-    $query = Classroom::with('studi')->withCount('students');
-    if ($request->has('studi_id')) {
-        $query->where('studi_id', $request->studi_id);
+    try {
+        $q = Classroom::query()
+            ->with('studi')
+            ->withCount('students');
+
+        if ($request->filled('studi_id')) {
+            $q->where('studi_id', $request->studi_id);
+        }
+
+        $data = $q->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Daftar kelas berhasil diambil.',
+            'data'    => $data,
+        ]);
+    } catch (\Throwable $e) {
+        \Log::error('Classroom index error', [
+            'msg' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+        ]);
+        return response()->json([
+            'success' => false,
+            'message' => config('app.debug') ? $e->getMessage() : 'Server error',
+        ], 500);
     }
-    return $query->get();
 }
+
 
 
    public function kelasByJenjang($nama_studi)
