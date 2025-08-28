@@ -22,6 +22,10 @@ class TeamRace extends Model
         'champion',
     ];
 
+    protected $casts = [
+        'lombad_id' => 'integer',
+    ];
+
     public function lombad() {
         return $this->belongsTo(Lombad::class);
     }
