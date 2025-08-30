@@ -14,52 +14,25 @@ class LombadController extends Controller
      * Query (opsional): ekskul_id, status (Individu|Team), studi_id (via relasi ekskul.studi_id)
      * Tambah ?debug=1 untuk keluarkan info diagnostik.
      */
-    public function index(Request $r)
-    {
-        // ====== MODE DEBUG (panggil: /api/lombads?debug=1) ======
-        if ($r->boolean('debug')) {
-            $rawCount      = DB::table('lombads')->count();
-            $eloqCount     = Lombad::withoutGlobalScopes()->count();
-            $lastRaw       = DB::table('lombads')->orderByDesc('id')->first();
-            $lastEloquent  = Lombad::withoutGlobalScopes()->with('ekskul')->latest('id')->first();
+   public function index(Request $r)
+{
+    $q = \App\Models\Lombad::withoutGlobalScopes() // <— matikan scope
+        ->with('ekskul')
+        ->latest('id');
 
-            return response()->json([
-                'success' => true,
-                'message' => 'DEBUG lombads',
-                'debug'   => [
-                    'app_env'         => config('app.env'),
-                    'db_connection'   => config('database.default'),
-                    'db_database'     => DB::connection()->getDatabaseName(),
-                    'auth_user_id'    => optional(auth()->user())->id,
-                    'raw_count'       => $rawCount,
-                    'eloquent_count'  => $eloqCount,
-                    'last_raw'        => $lastRaw,
-                    'last_eloquent'   => $lastEloquent,
-                ],
-            ], 200);
-        }
-        // =========== END DEBUG ===========
+    $q->when($r->filled('ekskul_id'), fn($x)=>$x->where('ekskul_id',(int)$r->ekskul_id));
+    $q->when($r->filled('status'),    fn($x)=>$x->where('status',$r->status));
+    $q->when($r->filled('studi_id'),  fn($x)=>$x->whereHas('ekskul',fn($y)=>$y->where('studi_id',(int)$r->studi_id)));
 
-        $q = Lombad::query()
-            ->with('ekskul')
-            ->latest('id');
+    // kalau hosting pakai read/write split
+    $data = $q->useWritePdo()->get();
 
-        // Terapkan filter hanya jika PARAM ada NILAINYA
-        $q->when($r->filled('ekskul_id'), fn ($x) => $x->where('ekskul_id', (int) $r->ekskul_id));
-        $q->when($r->filled('status'),    fn ($x) => $x->where('status', $r->status));
-        $q->when($r->filled('studi_id'),  fn ($x) =>
-            $x->whereHas('ekskul', fn ($y) => $y->where('studi_id', (int) $r->studi_id))
-        );
-
-        // Hindari lag replica (jika hosting pakai read/write split)
-        $data = $q->useWritePdo()->get();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Daftar lomba berhasil diambil.',
-            'data'    => $data,
-        ], 200);
-    }
+    return response()->json([
+        'success'=>true,
+        'message'=>'Daftar lomba berhasil diambil.',
+        'data'=>$data,
+    ],200);
+}
 
     /**
      * POST /api/lombads
