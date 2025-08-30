@@ -10,17 +10,25 @@ use Illuminate\Http\Request;
 class LombadController extends Controller
 {
     // List semua lomba
-    public function index(Request $request)
+public function index(Request $r)
 {
-   $lombas = \App\Models\Lombad::select('id','name','status','ekskul_id')->get();
+    $q = \App\Models\Lombad::query()
+        ->with('ekskul') // ✅ ini yang bikin relasi ikut diambil
+        ->latest('id');
 
+    $q->when($r->filled('ekskul_id'), fn($x) => $x->where('ekskul_id', (int)$r->ekskul_id));
+    $q->when($r->filled('status'),    fn($x) => $x->where('status',$r->status));
+    $q->when($r->filled('studi_id'),  fn($x) => $x->whereHas('ekskul', fn($y) => $y->where('studi_id',(int)$r->studi_id)));
+
+    $data = $q->get();
 
     return response()->json([
         'success' => true,
         'message' => 'Daftar lomba berhasil diambil.',
-        'data' => $lombas,
-    ], 200);
+        'data'    => $data,
+    ],200);
 }
+
 
 
     // Tambah lomba
