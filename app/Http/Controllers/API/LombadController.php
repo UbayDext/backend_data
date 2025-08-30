@@ -12,12 +12,8 @@ class LombadController extends Controller
     // List semua lomba
     public function index(Request $request)
 {
-    $query = Lombad::with('ekskul');
-    if ($request->has('ekskul_id')) {
-        $query->where('ekskul_id', $request->ekskul_id);
-    }
+   $lombas = \App\Models\Lombad::select('id','name','status','ekskul_id')->get();
 
-    $lombas  = $query->get();
 
     return response()->json([
         'success' => true,
