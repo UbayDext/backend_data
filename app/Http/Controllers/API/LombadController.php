@@ -12,10 +12,7 @@ class LombadController extends Controller
     // List semua lomba
 public function index(Request $r)
 {
-    $q = \App\Models\Lombad::with('ekskul')->latest('id');
-
-    $data = Lombad::with('ekskul')->get();
-
+    $data = Lombad::with('ekskul')->latest('id')->get();
 
     return response()->json([
         'success' => true,
@@ -24,6 +21,7 @@ public function index(Request $r)
         'data'    => $data,
     ], 200);
 }
+
 
 
 
