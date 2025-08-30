@@ -14,7 +14,8 @@ public function index(Request $r)
 {
     $q = \App\Models\Lombad::with('ekskul')->latest('id');
 
-    $data = $q->get();
+    $data = Lombad::with('ekskul')->get();
+
 
     return response()->json([
         'success' => true,
