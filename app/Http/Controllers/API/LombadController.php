@@ -16,15 +16,29 @@ class LombadController extends Controller
      */
 public function index(Request $r)
 {
-    // Paling minimal: Eloquent murni
-    $data = \App\Models\Lombad::select('id','name','status','ekskul_id')->get();
+    $q = \App\Models\Lombad::query()
+        // eager load relasi, batasi kolom biar ringan
+        ->with(['ekskul:id,nama_ekskul,studi_id'])
+        // kolom parent yang dibutuhkan (harus menyertakan ekskul_id!)
+        ->select('id','name','status','ekskul_id')
+        ->orderByDesc('id'); // aman, tidak override latest()
+
+    // filter opsional (hanya jika ada nilai)
+    $q->when($r->filled('ekskul_id'), fn($x)=>$x->where('ekskul_id', (int)$r->ekskul_id));
+    $q->when($r->filled('status'),    fn($x)=>$x->where('status', $r->status));
+    $q->when($r->filled('studi_id'),  fn($x)=>
+        $x->whereHas('ekskul', fn($y)=>$y->where('studi_id', (int)$r->studi_id))
+    );
+
+    $data = $q->get();
 
     return response()->json([
         'success' => true,
-        'message' => 'Daftar lomba (smoke test).',
+        'message' => 'Daftar lomba (with ekskul).',
         'data'    => $data,
     ], 200)->header('Cache-Control','no-store');
 }
+
 
 
 
