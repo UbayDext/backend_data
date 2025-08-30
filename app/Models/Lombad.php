@@ -9,6 +9,7 @@ class Lombad extends Model
 {
     use HasFactory;
 
+    protected $table = 'lombads';
     protected $fillable = [
         'name',
         'status',
