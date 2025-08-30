@@ -3,53 +3,68 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Models\Ekskul;
 use App\Models\Lombad;
 use Illuminate\Http\Request;
 
 class LombadController extends Controller
 {
-    // List semua lomba
-    public function index(Request $request)
-{
-    $query = Lombad::with('ekskul');
+    /**
+     * GET /api/lombads
+     * Query params (opsional):
+     * - ekskul_id
+     * - status (Individu|Team)
+     * - studi_id (disaring via relasi ekskul.studi_id)
+     */
+    public function index(Request $r)
+    {
+        $q = Lombad::query()
+            ->with(['ekskul' /* ->select('id','nama_ekskul','studi_id') */])
+            ->latest('id');
 
-    if ($request->has('ekskul_id')) {
-        $query->where('ekskul_id', $request->ekskul_id);
+        // Terapkan filter hanya jika ada nilainya
+        $q->when($r->filled('ekskul_id'), fn ($x) => $x->where('ekskul_id', (int) $r->ekskul_id));
+        $q->when($r->filled('status'),    fn ($x) => $x->where('status', $r->status));
+        $q->when($r->filled('studi_id'),  fn ($x) =>
+            $x->whereHas('ekskul', fn ($y) => $y->where('studi_id', (int) $r->studi_id))
+        );
+
+        // Paksa baca dari koneksi write (menghindari lag replica di sebagian hosting)
+        $data = $q->useWritePdo()->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Daftar lomba berhasil diambil.',
+            'data'    => $data,
+        ], 200);
     }
 
-    $lombas  = $query->get();
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Daftar lomba berhasil diambil.',
-        'data' => $lombas,
-    ], 200);
-}
-
-
-    // Tambah lomba
-    public function store(Request $request)
+    /**
+     * POST /api/lombads
+     * Body: name, status (Individu|Team), ekskul_id (exists: ekskuls.id)
+     */
+    public function store(Request $r)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'status' => 'required|in:Individu,Team',
-            'ekskul_id' => 'required|exists:ekskuls,id',
+        $validated = $r->validate([
+            'name'      => ['required', 'string', 'max:255'],
+            'status'    => ['required', 'in:Individu,Team'],
+            'ekskul_id' => ['required', 'exists:ekskuls,id'],
         ]);
 
-        $lomba = Lombad::create($data);
+        $lomba = Lombad::create($validated);
 
-        // reload dengan relasi
-        $lomba = Lombad::with('ekskul')->find($lomba->id);
+        // muat ulang dengan relasi
+        $lomba->load('ekskul');
 
         return response()->json([
             'success' => true,
             'message' => 'Lomba berhasil ditambahkan.',
-            'data' => $lomba,
+            'data'    => $lomba,
         ], 201);
     }
 
-    // Lihat detail lomba
+    /**
+     * GET /api/lombads/{id}
+     */
     public function show($id)
     {
         $lomba = Lombad::with('ekskul')->findOrFail($id);
@@ -57,34 +72,36 @@ class LombadController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Detail lomba berhasil diambil.',
-            'data' => $lomba,
+            'data'    => $lomba,
         ], 200);
     }
 
-    // Update lomba
-    public function update(Request $request, $id)
+    /**
+     * PUT/PATCH /api/lombads/{id}
+     */
+    public function update(Request $r, $id)
     {
         $lomba = Lombad::findOrFail($id);
 
-        $data = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'status' => 'sometimes|required|in:Individu,Team',
-            'ekskul_id' => 'sometimes|required|exists:ekskuls,id',
+        $validated = $r->validate([
+            'name'      => ['sometimes', 'required', 'string', 'max:255'],
+            'status'    => ['sometimes', 'required', 'in:Individu,Team'],
+            'ekskul_id' => ['sometimes', 'required', 'exists:ekskuls,id'],
         ]);
 
-        $lomba->update($data);
-
-        // reload dengan relasi
-        $lomba = Lombad::with('ekskul')->find($lomba->id);
+        $lomba->update($validated);
+        $lomba->load('ekskul');
 
         return response()->json([
             'success' => true,
             'message' => 'Lomba berhasil diperbarui.',
-            'data' => $lomba,
+            'data'    => $lomba,
         ], 200);
     }
 
-    // Hapus lomba
+    /**
+     * DELETE /api/lombads/{id}
+     */
     public function destroy($id)
     {
         $lomba = Lombad::findOrFail($id);
@@ -92,7 +109,7 @@ class LombadController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Lomba berhasil dihapus.'
+            'message' => 'Lomba berhasil dihapus.',
         ], 200);
     }
 }
