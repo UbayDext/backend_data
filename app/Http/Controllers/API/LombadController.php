@@ -14,88 +14,18 @@ class LombadController extends Controller
      * Query (opsional): ekskul_id, status (Individu|Team), studi_id (via relasi ekskul.studi_id)
      * Tambah ?debug=1 untuk keluarkan info diagnostik.
      */
- public function index(Request $r)
+public function index(Request $r)
 {
-    // Kumpulkan SQL kalau debug
-    $queries = [];
-    if ($r->boolean('debug')) {
-        \DB::listen(function ($q) use (&$queries) {
-            $queries[] = ['sql' => $q->sql, 'bindings' => $q->bindings];
-        });
-    }
+    // Paling minimal: Eloquent murni
+    $data = \App\Models\Lombad::select('id','name','status','ekskul_id')->get();
 
-    $q = \App\Models\Lombad::query()
-        ->with('ekskul')
-        ->latest('id');
-
-    // Terapkan filter hanya jika ada NILAI
-    $q->when($r->filled('ekskul_id'), fn ($x) => $x->where('ekskul_id', (int) $r->ekskul_id));
-    $q->when($r->filled('status'),    fn ($x) => $x->where('status', $r->status));
-    $q->when($r->filled('studi_id'),  fn ($x) =>
-        $x->whereHas('ekskul', fn ($y) => $y->where('studi_id', (int) $r->studi_id))
-    );
-
-    // NOTE: kalau host kamu pakai read/write split dan write DB beda/empty,
-    // coba NONAKTIFKAN baris di bawah ini. Untuk tes, aku matikan dulu.
-    // $data = $q->useWritePdo()->get();
-    $data = $q->get();
-
-    // RAW fallback jika Eloquent kosong
-    if ($data->isEmpty()) {
-        $raw = \DB::select('SELECT id, name, status, ekskul_id, created_at, updated_at FROM lombads ORDER BY id DESC LIMIT 100');
-        if ($r->boolean('debug')) {
-            return response()->json([
-                'success' => true,
-                'message' => 'DEBUG lombads (RAW fallback)',
-                'debug'   => [
-                    'request_query' => $r->query(),
-                    'has_filled'    => [
-                        'has_ekskul_id'    => $r->has('ekskul_id'),
-                        'filled_ekskul_id' => $r->filled('ekskul_id'),
-                        'has_status'       => $r->has('status'),
-                        'filled_status'    => $r->filled('status'),
-                        'has_studi_id'     => $r->has('studi_id'),
-                        'filled_studi_id'  => $r->filled('studi_id'),
-                    ],
-                    'eloq_result_count' => 0,
-                    'raw_count_table'   => \DB::table('lombads')->count(),
-                    'sql'               => $queries,
-                ],
-                'fallback_used' => true,
-                'data'          => $raw,
-            ], 200)->header('Cache-Control','no-store, no-cache, must-revalidate, max-age=0');
-        }
-
-        return response()->json([
-            'success'       => true,
-            'message'       => 'Daftar lomba (RAW fallback).',
-            'fallback_used' => true,
-            'data'          => $raw,
-        ], 200)->header('Cache-Control','no-store, no-cache, must-revalidate, max-age=0');
-    }
-
-    // Respon normal
-    $resp = [
-        'success'       => true,
-        'message'       => 'Daftar lomba berhasil diambil.',
-        'fallback_used' => false,
-        'data'          => $data,
-    ];
-
-    if ($r->boolean('debug')) {
-        $resp['debug'] = [
-            'request_query' => $r->query(),
-            'result_count'  => $data->count(),
-            'first_result'  => $data->first(),
-            'sql'           => $queries,
-        ];
-        $resp['message'] = 'DEBUG lombads';
-    }
-
-    return response()->json($resp, 200)
-        ->header('Cache-Control','no-store, no-cache, must-revalidate, max-age=0')
-        ->header('Pragma','no-cache');
+    return response()->json([
+        'success' => true,
+        'message' => 'Daftar lomba (smoke test).',
+        'data'    => $data,
+    ], 200)->header('Cache-Control','no-store');
 }
+
 
 
     /**
