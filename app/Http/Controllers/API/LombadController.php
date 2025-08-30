@@ -39,7 +39,7 @@ class LombadController extends Controller
         $lomba = Lombad::create($data);
 
         // reload dengan relasi
-        $lomba = Lombad::with('ekskul')->find($lomba->id);
+        $lomba->load('ekskul');
 
         return response()->json([
             'success' => true,
