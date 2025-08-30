@@ -12,22 +12,18 @@ class LombadController extends Controller
     // List semua lomba
 public function index(Request $r)
 {
-    $q = \App\Models\Lombad::query()
-        ->with('ekskul') // ✅ ini yang bikin relasi ikut diambil
-        ->latest('id');
-
-    $q->when($r->filled('ekskul_id'), fn($x) => $x->where('ekskul_id', (int)$r->ekskul_id));
-    $q->when($r->filled('status'),    fn($x) => $x->where('status',$r->status));
-    $q->when($r->filled('studi_id'),  fn($x) => $x->whereHas('ekskul', fn($y) => $y->where('studi_id',(int)$r->studi_id)));
+    $q = \App\Models\Lombad::with('ekskul')->latest('id');
 
     $data = $q->get();
 
     return response()->json([
         'success' => true,
         'message' => 'Daftar lomba berhasil diambil.',
+        'count'   => $data->count(),
         'data'    => $data,
-    ],200);
+    ], 200);
 }
+
 
 
 
