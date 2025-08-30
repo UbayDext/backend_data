@@ -5,30 +5,53 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Lombad;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class LombadController extends Controller
 {
     /**
      * GET /api/lombads
-     * Query params (opsional):
-     * - ekskul_id
-     * - status (Individu|Team)
-     * - studi_id (disaring via relasi ekskul.studi_id)
+     * Query (opsional): ekskul_id, status (Individu|Team), studi_id (via relasi ekskul.studi_id)
+     * Tambah ?debug=1 untuk keluarkan info diagnostik.
      */
     public function index(Request $r)
     {
+        // ====== MODE DEBUG (panggil: /api/lombads?debug=1) ======
+        if ($r->boolean('debug')) {
+            $rawCount      = DB::table('lombads')->count();
+            $eloqCount     = Lombad::withoutGlobalScopes()->count();
+            $lastRaw       = DB::table('lombads')->orderByDesc('id')->first();
+            $lastEloquent  = Lombad::withoutGlobalScopes()->with('ekskul')->latest('id')->first();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'DEBUG lombads',
+                'debug'   => [
+                    'app_env'         => config('app.env'),
+                    'db_connection'   => config('database.default'),
+                    'db_database'     => DB::connection()->getDatabaseName(),
+                    'auth_user_id'    => optional(auth()->user())->id,
+                    'raw_count'       => $rawCount,
+                    'eloquent_count'  => $eloqCount,
+                    'last_raw'        => $lastRaw,
+                    'last_eloquent'   => $lastEloquent,
+                ],
+            ], 200);
+        }
+        // =========== END DEBUG ===========
+
         $q = Lombad::query()
-            ->with(['ekskul' /* ->select('id','nama_ekskul','studi_id') */])
+            ->with('ekskul')
             ->latest('id');
 
-        // Terapkan filter hanya jika ada nilainya
+        // Terapkan filter hanya jika PARAM ada NILAINYA
         $q->when($r->filled('ekskul_id'), fn ($x) => $x->where('ekskul_id', (int) $r->ekskul_id));
         $q->when($r->filled('status'),    fn ($x) => $x->where('status', $r->status));
         $q->when($r->filled('studi_id'),  fn ($x) =>
             $x->whereHas('ekskul', fn ($y) => $y->where('studi_id', (int) $r->studi_id))
         );
 
-        // Paksa baca dari koneksi write (menghindari lag replica di sebagian hosting)
+        // Hindari lag replica (jika hosting pakai read/write split)
         $data = $q->useWritePdo()->get();
 
         return response()->json([
@@ -51,8 +74,6 @@ class LombadController extends Controller
         ]);
 
         $lomba = Lombad::create($validated);
-
-        // muat ulang dengan relasi
         $lomba->load('ekskul');
 
         return response()->json([
