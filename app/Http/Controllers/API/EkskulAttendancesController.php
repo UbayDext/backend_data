@@ -90,7 +90,7 @@ public function dailyAll(Request $request)
     $tanggal   = $request->query('tanggal');
     $month     = $request->query('month');
 
-    $q = EkskulAttendance::query()
+    $q = EkskulAttendances::query()
         ->where('ekskul_id', $ekskulId);
 
     if ($month) {
