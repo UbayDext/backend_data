@@ -81,38 +81,34 @@ public function dailyAll(Request $request)
 
 
     // Rekap harian/bulanan (optional: bisa tambah filter kelas/jenjang)
-   public function rekap(Request $r)
+  public function rekap(Request $r)
 {
     $ekskulId  = (int) $r->get('ekskul_id');
     $tanggal   = $r->get('tanggal'); // 'YYYY-MM-DD'
-    $studiId   = $r->get('studi_id'); // nullable
+    $studiId   = $r->get('studi_id');
     $kelasId   = $r->get('kelas_id', $r->get('classroom_id')); // alias
 
-    // VALIDASI minimum
-    if (!$ekskulId || !$tanggal) {
-        return response()->json(['message' => 'ekskul_id & tanggal wajib'], 422);
-    }
-
-    $agg = DB::table('ekskul_attendances as ea')
-        ->join('students as s', 's.id', '=', 'ea.student_id')
+    $agg = \DB::table('ekskul_attendances as ea')
+        ->join('students as s','s.id','=','ea.student_id')
         ->where('ea.ekskul_id', $ekskulId)
-        ->whereDate('ea.tanggal', $tanggal)               // <= penting!
-        ->when($studiId, fn($q) => $q->where('s.studi_id', $studiId))
-        ->when($kelasId, fn($q) => $q->where('s.classroom_id', $kelasId))
+        ->whereDate('ea.tanggal', $tanggal)              // <= ini yang bikin match!
+        ->when($studiId, fn($q)=>$q->where('s.studi_id',$studiId))
+        ->when($kelasId, fn($q)=>$q->where('s.classroom_id',$kelasId))
         ->selectRaw("
-            SUM(CASE WHEN ea.status='H' THEN 1 ELSE 0 END) as H,
-            SUM(CASE WHEN ea.status='I' THEN 1 ELSE 0 END) as I,
-            SUM(CASE WHEN ea.status='S' THEN 1 ELSE 0 END) as S,
-            SUM(CASE WHEN ea.status='A' THEN 1 ELSE 0 END) as A
+          SUM(CASE WHEN ea.status='H' THEN 1 ELSE 0 END) as H,
+          SUM(CASE WHEN ea.status='I' THEN 1 ELSE 0 END) as I,
+          SUM(CASE WHEN ea.status='S' THEN 1 ELSE 0 END) as S,
+          SUM(CASE WHEN ea.status='A' THEN 1 ELSE 0 END) as A
         ")
         ->first();
 
     return response()->json([
-        'H' => (int) ($agg->H ?? 0),
-        'I' => (int) ($agg->I ?? 0),
-        'S' => (int) ($agg->S ?? 0),
-        'A' => (int) ($agg->A ?? 0),
+        'H'=>(int)($agg->H ?? 0),
+        'I'=>(int)($agg->I ?? 0),
+        'S'=>(int)($agg->S ?? 0),
+        'A'=>(int)($agg->A ?? 0),
     ]);
 }
+
 
 }
