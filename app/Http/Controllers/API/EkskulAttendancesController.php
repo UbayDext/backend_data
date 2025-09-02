@@ -82,37 +82,47 @@ public function dailyAll(Request $request)
 
     // Rekap harian/bulanan (optional: bisa tambah filter kelas/jenjang)
     public function rekap(Request $request)
-    {
-        $ekskulId  = $request->ekskul_id;
-        $kelasId   = $request->kelas_id;
-        $studiId = $request->studi_id;
+{
+    $ekskulId  = (int) $request->query('ekskul_id');
+    // terima keduanya
+    $kelasId   = $request->query('kelas_id', $request->query('classroom_id'));
+    $studiId   = $request->query('studi_id');
+    $tanggal   = $request->query('tanggal');
+    $month     = $request->query('month');
 
-        $query = EkskulAttendances::where('ekskul_id', $ekskulId);
+    $q = EkskulAttendance::query()
+        ->where('ekskul_id', $ekskulId);
 
-        if ($request->has('month')) {
-            $query->where('tanggal', 'like', $request->month . '%');
-        }
-        if ($request->has('tanggal')) {
-            $query->where('tanggal', $request->tanggal);
-        }
-
-       if ($kelasId || $studiId) {
-        $query->when($kelasId, fn($q) =>
-        $q->whereHas('student', fn($q2) => $q2->where('classroom_id', $kelasId))
-            );
-        $query->when($studiId, fn($q) =>
-        $q->whereHas('student', fn($q2) => $q2->where('studi_id', $studiId))
-            );
-}
-        $data = $query->selectRaw("status, count(*) as jumlah")
-            ->groupBy('status')
-            ->pluck('jumlah', 'status');
-
-        return response()->json([
-            'H' => $data['H'] ?? 0,
-            'I' => $data['I'] ?? 0,
-            'S' => $data['S'] ?? 0,
-            'A' => $data['A'] ?? 0,
-        ]);
+    if ($month) {
+        $q->where('tanggal', 'like', $month.'%'); // YYYY-MM
     }
+    if ($tanggal) {
+        $q->where('tanggal', $tanggal); // YYYY-MM-DD
+        // kalau kolommu date/datetime dan mau aman zona waktu:
+        // $q->whereDate('tanggal', $tanggal);
+    }
+
+    // filter relasi opsional
+    $q->when($kelasId, function ($q) use ($kelasId) {
+        $q->whereHas('student', fn($s) => $s->where('classroom_id', $kelasId));
+    });
+    $q->when($studiId, function ($q) use ($studiId) {
+        $q->whereHas('student', fn($s) => $s->where('studi_id', $studiId));
+    });
+
+    $agg = $q->selectRaw("
+        SUM(CASE WHEN status = 'H' THEN 1 ELSE 0 END) as H,
+        SUM(CASE WHEN status = 'I' THEN 1 ELSE 0 END) as I,
+        SUM(CASE WHEN status = 'S' THEN 1 ELSE 0 END) as S,
+        SUM(CASE WHEN status = 'A' THEN 1 ELSE 0 END) as A
+    ")->first();
+
+    return response()->json([
+        'H' => (int) ($agg->H ?? 0),
+        'I' => (int) ($agg->I ?? 0),
+        'S' => (int) ($agg->S ?? 0),
+        'A' => (int) ($agg->A ?? 0),
+    ]);
+}
+
 }
