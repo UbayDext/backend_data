@@ -80,20 +80,28 @@ public function dailyAll(Request $request)
 }
 
 
-    // Rekap harian/bulanan (optional: bisa tambah filter kelas/jenjang)
-  public function rekap(Request $r)
+   public function rekap(Request $r)
 {
-    $ekskulId  = (int) $r->get('ekskul_id');
-    $tanggal   = $r->get('tanggal'); // 'YYYY-MM-DD'
-    $studiId   = $r->get('studi_id');
-    $kelasId   = $r->get('kelas_id', $r->get('classroom_id')); // alias
+    $data = $r->validate([
+        'ekskul_id'    => ['required','integer','exists:ekskuls,id'],
+        'tanggal'      => ['required','date_format:Y-m-d'],
+        'studi_id'     => ['nullable','integer','exists:studis,id'],
+        'kelas_id'     => ['nullable','integer','exists:classrooms,id'],
+        'classroom_id' => ['nullable','integer','exists:classrooms,id'],
+        'month'        => ['nullable','date_format:Y-m'],
+    ]);
+
+    $ekskulId = (int) $data['ekskul_id'];
+    $tanggal  = $data['tanggal'];
+    $studiId  = $data['studi_id'] ?? null;
+    $kelasId  = $data['kelas_id'] ?? $data['classroom_id'] ?? null;
 
     $agg = \DB::table('ekskul_attendances as ea')
-        ->join('students as s','s.id','=','ea.student_id')
+        ->join('students as s', 's.id', '=', 'ea.student_id')
         ->where('ea.ekskul_id', $ekskulId)
-        ->whereDate('ea.tanggal', $tanggal)              // <= ini yang bikin match!
-        ->when($studiId, fn($q)=>$q->where('s.studi_id',$studiId))
-        ->when($kelasId, fn($q)=>$q->where('s.classroom_id',$kelasId))
+        ->whereDate('ea.tanggal', $tanggal)                 // penting: DATE, bukan equality
+        ->when($studiId, fn($q) => $q->where('s.studi_id', $studiId))
+        ->when($kelasId, fn($q) => $q->where('s.classroom_id', $kelasId))
         ->selectRaw("
           SUM(CASE WHEN ea.status='H' THEN 1 ELSE 0 END) as H,
           SUM(CASE WHEN ea.status='I' THEN 1 ELSE 0 END) as I,
@@ -103,12 +111,13 @@ public function dailyAll(Request $request)
         ->first();
 
     return response()->json([
-        'H'=>(int)($agg->H ?? 0),
-        'I'=>(int)($agg->I ?? 0),
-        'S'=>(int)($agg->S ?? 0),
-        'A'=>(int)($agg->A ?? 0),
+        'H' => (int) ($agg->H ?? 0),
+        'I' => (int) ($agg->I ?? 0),
+        'S' => (int) ($agg->S ?? 0),
+        'A' => (int) ($agg->A ?? 0),
     ]);
 }
+
 
 
 }
