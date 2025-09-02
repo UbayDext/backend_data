@@ -5,7 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\EkskulAttendances;
 use App\Models\Student;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\DB;
 class EkskulAttendancesController extends Controller
 {
     // Tampilkan semua siswa peserta ekskul tertentu (filter kelas & jenjang) + status presensi
@@ -81,41 +81,31 @@ public function dailyAll(Request $request)
 
 
     // Rekap harian/bulanan (optional: bisa tambah filter kelas/jenjang)
-    public function rekap(Request $request)
+   public function rekap(Request $r)
 {
-    $ekskulId  = (int) $request->query('ekskul_id');
-    // terima keduanya
-    $kelasId   = $request->query('kelas_id', $request->query('classroom_id'));
-    $studiId   = $request->query('studi_id');
-    $tanggal   = $request->query('tanggal');
-    $month     = $request->query('month');
+    $ekskulId  = (int) $r->get('ekskul_id');
+    $tanggal   = $r->get('tanggal'); // 'YYYY-MM-DD'
+    $studiId   = $r->get('studi_id'); // nullable
+    $kelasId   = $r->get('kelas_id', $r->get('classroom_id')); // alias
 
-    $q = EkskulAttendances::query()
-        ->where('ekskul_id', $ekskulId);
-
-    if ($month) {
-        $q->where('tanggal', 'like', $month.'%'); // YYYY-MM
-    }
-    if ($tanggal) {
-        $q->where('tanggal', $tanggal); // YYYY-MM-DD
-        // kalau kolommu date/datetime dan mau aman zona waktu:
-        // $q->whereDate('tanggal', $tanggal);
+    // VALIDASI minimum
+    if (!$ekskulId || !$tanggal) {
+        return response()->json(['message' => 'ekskul_id & tanggal wajib'], 422);
     }
 
-    // filter relasi opsional
-    $q->when($kelasId, function ($q) use ($kelasId) {
-        $q->whereHas('student', fn($s) => $s->where('classroom_id', $kelasId));
-    });
-    $q->when($studiId, function ($q) use ($studiId) {
-        $q->whereHas('student', fn($s) => $s->where('studi_id', $studiId));
-    });
-
-    $agg = $q->selectRaw("
-        SUM(CASE WHEN status = 'H' THEN 1 ELSE 0 END) as H,
-        SUM(CASE WHEN status = 'I' THEN 1 ELSE 0 END) as I,
-        SUM(CASE WHEN status = 'S' THEN 1 ELSE 0 END) as S,
-        SUM(CASE WHEN status = 'A' THEN 1 ELSE 0 END) as A
-    ")->first();
+    $agg = DB::table('ekskul_attendances as ea')
+        ->join('students as s', 's.id', '=', 'ea.student_id')
+        ->where('ea.ekskul_id', $ekskulId)
+        ->whereDate('ea.tanggal', $tanggal)               // <= penting!
+        ->when($studiId, fn($q) => $q->where('s.studi_id', $studiId))
+        ->when($kelasId, fn($q) => $q->where('s.classroom_id', $kelasId))
+        ->selectRaw("
+            SUM(CASE WHEN ea.status='H' THEN 1 ELSE 0 END) as H,
+            SUM(CASE WHEN ea.status='I' THEN 1 ELSE 0 END) as I,
+            SUM(CASE WHEN ea.status='S' THEN 1 ELSE 0 END) as S,
+            SUM(CASE WHEN ea.status='A' THEN 1 ELSE 0 END) as A
+        ")
+        ->first();
 
     return response()->json([
         'H' => (int) ($agg->H ?? 0),
