@@ -89,8 +89,7 @@ Route::middleware('auth:sanctum')->group(function() {
     Route::put('/users/me/password',[UserController::class, 'changeMyPassword']);
     Route::put('/users/{user}/password',[UserController::class, 'changePassword']);
     Route::get('/me/basic', [UserController::class, 'meBasic']);
-    Route::middleware('auth:sanctum')->put('/me/profile/{user}', [UserController::class, 'editProfile'])
-     ->whereNumber('user');
+    Route::put('me/profile', [UserController::class, 'editProfile']);
 
 });
 
