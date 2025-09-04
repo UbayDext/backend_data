@@ -120,6 +120,23 @@ class AuthController extends Controller
         ], 200);
     }
 
+   public function editProfile(Request $request, User $user)
+{
+    $validated = $request->validate([
+        'name' => 'sometimes|required|string|max:255',
+        'email' => 'sometimes|required|email|max:255|unique:users,email,' . $user->id,
+        'password' => 'sometimes|required|string|min:6|confirmed',
+    ]);
+
+    if (isset($validated['name'])) $user->name = $validated['name'];
+    if (isset($validated['email'])) $user->email = $validated['email'];
+    if (isset($validated['password'])) $user->password = Hash::make($validated['password']);
+
+    $user->save();
+
+    return response()->json(['user' => $user], 200);
+}
+
     /**
      * Langkah 2: Mereset password dengan token yang valid.
      * URL: POST /api/reset-password
