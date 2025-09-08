@@ -86,7 +86,7 @@ Route::middleware('auth:sanctum')->group(function() {
     Route::delete('/users/{user}',[UserController::class, 'destroy']);
     Route::get('/users/me',[UserController::class, 'me']);
     Route::put('/users/meBasic',[UserController::class, 'updateMe']);
-    Route::put('/users/me/password',[UserController::class, 'changeMyPassword']);
+    Route::put('/me/password',[UserController::class, 'changeMyPassword']);
     Route::put('/users/{user}/password',[UserController::class, 'changePassword']);
     Route::get('/me/basic', [UserController::class, 'meBasic']);
 });
