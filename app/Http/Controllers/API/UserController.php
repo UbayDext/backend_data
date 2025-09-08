@@ -208,7 +208,7 @@ class UserController extends Controller
             abort_unless($this->isAdmin($actor), 403, 'Hanya admin yang boleh.');
 
             $validated = $request->validate([
-                'password' => ['required','string','min:8','confirmed'],
+                'password' => ['required','string','min:6','confirmed'],
             ]);
 
             $user->update(['password' => $validated['password']]); // auto hash
