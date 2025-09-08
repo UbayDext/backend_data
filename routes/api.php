@@ -79,13 +79,11 @@ Route::middleware('auth:sanctum')->group(function() {
 });
 Route::middleware('auth:sanctum')->group(function () {
 
-    // ---- ROUTES UNTUK USER YANG LOGIN (spesifik, taruh di ATAS) ----
     Route::get('/me',         [UserController::class, 'me'])->name('me.show');
     Route::get('/me/basic',   [UserController::class, 'meBasic'])->name('me.basic');
-    Route::put('/me/basic',   [UserController::class, 'updateMe'])->name('me.basic.update');
+    Route::put('/me/profile', [UserController::class, 'updateMe']);
     Route::put('/me/password',[UserController::class, 'changeMyPassword'])->name('me.password');
 
-    // ---- ROUTES UNTUK USER LAIN (admin/self by id), BATASI PARAMETER ----
     Route::get   ('/users',              [UserController::class, 'index']);
     Route::post  ('/users',              [UserController::class, 'store']);
     Route::get   ('/users/{user}',       [UserController::class, 'show'])->whereNumber('user');
