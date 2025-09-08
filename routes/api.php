@@ -77,17 +77,21 @@ Route::middleware('auth:sanctum')->group(function() {
     Route::delete('team-race/{id}', [TeamRaceController::class, 'destroy']);
     Route::put('/team-races/{id}', [TeamRaceController::class, 'update']);
 });
-Route::middleware('auth:sanctum')->group(function() {
-    Route::get('/users',[UserController::class, 'index']);
-    Route::post('/users',[UserController::class, 'store']);
-    Route::get('/users/{user}',[UserController::class, 'show']);
-    Route::put('/users/{user}',[UserController::class, 'update']);
-    Route::patch('/users/{user}',[UserController::class, 'update']);
-    Route::delete('/users/{user}',[UserController::class, 'destroy']);
-    Route::get('/users/me',[UserController::class, 'me']);
-    Route::put('/users/meBasic',[UserController::class, 'updateMe']);
-    Route::put('/me/password',[UserController::class, 'changeMyPassword']);
-    Route::put('/users/{user}/password',[UserController::class, 'changePassword']);
-    Route::get('/me/basic', [UserController::class, 'meBasic']);
+Route::middleware('auth:sanctum')->group(function () {
+
+    // ---- ROUTES UNTUK USER YANG LOGIN (spesifik, taruh di ATAS) ----
+    Route::get('/me',         [UserController::class, 'me'])->name('me.show');
+    Route::get('/me/basic',   [UserController::class, 'meBasic'])->name('me.basic');
+    Route::put('/me/basic',   [UserController::class, 'updateMe'])->name('me.basic.update');
+    Route::put('/me/password',[UserController::class, 'changeMyPassword'])->name('me.password');
+
+    // ---- ROUTES UNTUK USER LAIN (admin/self by id), BATASI PARAMETER ----
+    Route::get   ('/users',              [UserController::class, 'index']);
+    Route::post  ('/users',              [UserController::class, 'store']);
+    Route::get   ('/users/{user}',       [UserController::class, 'show'])->whereNumber('user');
+    Route::put   ('/users/{user}',       [UserController::class, 'update'])->whereNumber('user');
+    Route::patch ('/users/{user}',       [UserController::class, 'update'])->whereNumber('user');
+    Route::delete('/users/{user}',       [UserController::class, 'destroy'])->whereNumber('user');
+    Route::put   ('/users/{user}/password',[UserController::class, 'changePassword'])->whereNumber('user');
 });
 
