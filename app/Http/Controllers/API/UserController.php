@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
@@ -183,22 +184,29 @@ class UserController extends Controller
     }
 
     // PUT /api/users/me/password
-    public function changeMyPassword(Request $request)
-    {
-        try {
-            $me = $request->user();
+  public function changeMyPassword(Request $request)
+{
+    try {
+        $me = $request->user();
 
-            $validated = $request->validate([
-                'current_password' => ['required','current_password'],
-                'password'         => ['required','string','min:6','confirmed'],
-            ]);
+        $validated = $request->validate([
+            'current_password' => ['required', 'current_password:sanctum'],
+            'password'         => ['required', 'string', 'min:6', 'confirmed'],
+        ]);
 
-            $me->update(['password' => $validated['password']]); // auto hash
-            return $this->ok('Password berhasil diganti');
-        } catch (\Throwable $e) {
-            return $this->fail($e);
-        }
+        $me->update(['password' => $validated['password']]);
+        return $this->ok('Password berhasil diganti');
+
+    } catch (ValidationException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Validasi gagal',
+            'errors'  => $e->errors(),
+        ], 422);
+    } catch (\Throwable $e) {
+        return $this->fail($e);
     }
+}
 
     // PUT /api/users/{user}/password
     public function changePassword(Request $request, User $user)
