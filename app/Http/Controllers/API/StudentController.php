@@ -45,27 +45,63 @@ class StudentController extends Controller
     /**
      * POST /api/students
      */
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'name'         => 'required|string|max:255',
-            'classroom_id' => 'required|exists:classrooms,id',
-            'studi_id'     => 'required|exists:studis,id',
-            'ekskul_id'    => 'required|exists:ekskuls,id',
-        ]);
+  public function store(Request $request)
+{
+    // Validasi longgar dulu: izinkan salah satu (id ATAU nama)
+    $validator = Validator::make($request->all(), [
+        'name'            => 'required|string|max:255',
+        'classroom_id'    => 'nullable|exists:classrooms,id',
+        'classroom_name'  => 'nullable|string',
+        'studi_id'        => 'nullable|exists:studis,id',
+        'ekskul_id'       => 'nullable|exists:ekskuls,id',
+        'ekskul_name'     => 'nullable|string',
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json(['success'=>false,'errors' => $validator->errors()], 422);
-        }
-
-        $student = Student::create($validator->validated());
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Siswa berhasil ditambahkan',
-            'data'    => $student->load(['classroom','ekskul','studi'])
-        ], 201);
+    if ($validator->fails()) {
+        return response()->json(['success'=>false,'errors'=>$validator->errors()], 422);
     }
+
+    $data = $validator->validated();
+
+    // --- Classroom: id atau name ---
+    if (empty($data['classroom_id'])) {
+        $classroom = Classroom::whereRaw('LOWER(name)=?', [strtolower($request->input('classroom_name'))])->first();
+        if (!$classroom) {
+            return response()->json(['success'=>false,'message'=>'Classroom tidak valid'], 422);
+        }
+        $data['classroom_id'] = $classroom->id;
+        // turunkan studi_id dari classroom kalau tidak dikirim
+        $data['studi_id'] = $data['studi_id'] ?? $classroom->studi_id;
+    }
+
+    // --- Ekskul: id atau name ---
+    if (empty($data['ekskul_id'])) {
+        $ekskul = Ekskul::whereRaw('LOWER(nama_ekskul)=?', [strtolower($request->input('ekskul_name'))])->first();
+        if (!$ekskul) {
+            return response()->json(['success'=>false,'message'=>'Ekskul tidak valid'], 422);
+        }
+        $data['ekskul_id'] = $ekskul->id;
+    }
+
+    // Pastikan studi_id terisi
+    if (empty($data['studi_id'])) {
+        return response()->json(['success'=>false,'message'=>'studi_id wajib ada (atau ikut dari classroom)'], 422);
+    }
+
+    $student = Student::create([
+        'name'         => $data['name'],
+        'classroom_id' => $data['classroom_id'],
+        'studi_id'     => $data['studi_id'],
+        'ekskul_id'    => $data['ekskul_id'],
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Siswa berhasil ditambahkan',
+        'data'    => $student->load(['classroom','ekskul','studi']),
+    ], 201);
+}
+
 
     /**
      * GET /api/students/{id}
