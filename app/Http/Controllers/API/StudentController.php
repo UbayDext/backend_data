@@ -356,7 +356,7 @@ public function importMany(Request $request)
 
         return response()->json([
             'success'=>true,
-            'message'=>'Daftar siswa per ekskul',
+            'message'=>'Daftar siswa setiap ekskul',
             'data'=>$students
         ]);
     }
