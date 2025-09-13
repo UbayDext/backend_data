@@ -29,8 +29,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('classrooms/jenjang/{nama_studi}', [ClassroomController::class, 'KelasByJenjang']);
 });
 Route::middleware('auth:sanctum')->group(function () {
-    Route::apiResource('ekskul', EkskulController::class);
     Route::get('ekskul/options', [EkskulController::class, 'options']);
+    Route::apiResource('ekskul', EkskulController::class);
+
     Route::get('ekskul/jenjang/{nama_studi}', [EkskulController::class, 'EkskulByJenjang']);
 });
 Route::middleware('auth:sanctum')->group(function () {
