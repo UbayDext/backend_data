@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -21,6 +22,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'ekskul_id',
     ];
 
     /**
@@ -33,6 +36,7 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+
     /**
      * Get the attributes that should be cast.
      *
@@ -44,5 +48,28 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isGuruEkskul(): bool
+    {
+        return $this->role === 'guru_ekskul';
+    }
+
+    public function ekskul(): BelongsTo
+    {
+        return $this->belongsTo(Ekskul::class);
+    }
+
+     public function scopeForEkskulActor($query, User $actor)
+    {
+        if ($actor->isAdmin()) return $query;
+        if ($actor->isGuruEkskul() && $actor->ekskul_id) {
+            return $query->where('ekskul_id', $actor->ekskul_id);
+        }
+        return $query;
     }
 }

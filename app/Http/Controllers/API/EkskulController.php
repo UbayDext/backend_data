@@ -102,4 +102,23 @@ public function destroy(string $id)
     ], 200);
 }
 
+public function options(Request $request)
+{
+    $q       = trim((string) $request->query('q', ''));      // opsional: search
+    $studiId = $request->query('studi_id');                  // opsional: filter jenjang
+
+    $ekskul = Ekskul::query()
+        ->when($q !== '', fn($x) => $x->where('nama_ekskul', 'like', "%{$q}%"))
+        ->when($studiId, fn($x) => $x->where('studi_id', $studiId))
+        ->orderByDesc('updated_at')
+        ->orderByDesc('id')
+        ->get(['id', 'nama_ekskul']);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Opsi ekskul',
+        'data'    => $ekskul,
+    ]);
+}
+
 }

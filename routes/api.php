@@ -30,6 +30,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('ekskul', EkskulController::class);
+    Route::get('ekskul/options', [EkskulController::class, 'options']);
     Route::get('ekskul/jenjang/{nama_studi}', [EkskulController::class, 'EkskulByJenjang']);
 });
 Route::middleware('auth:sanctum')->group(function () {
@@ -50,7 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('sertifikations/by-student/{student}', [SertifikationController::class, 'byStudent']);
     Route::get('sertifikations-counts', [SertifikationController::class, 'counts']);
 });
-Route::middleware('auth:sanctum')->group(function() {
+Route::middleware('auth:sanctum', 'restrict.ekskul')->group(function() {
     Route::get('ekskul-attendance/daily', [EkskulAttendancesController::class, 'dailyAll']);
     Route::post('ekskul-attendance/update', [EkskulAttendancesController::class, 'updateOrCreate']);
     Route::get('ekskul-attendance/rekap', [EkskulAttendancesController::class, 'rekap']);

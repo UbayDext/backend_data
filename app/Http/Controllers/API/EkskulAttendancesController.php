@@ -7,6 +7,8 @@ use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+
 class EkskulAttendancesController extends Controller
 {
 
@@ -63,37 +65,42 @@ class EkskulAttendancesController extends Controller
     }
 
     // Fast update status
-   public function updateOrCreate(Request $request)
-    {
-        $request->validate([
-            'student_id' => 'required|exists:students,id',
-            'ekskul_id'  => 'required|exists:ekskuls,id',
-            'tanggal'    => 'required|date_format:Y-m-d',
-            'status'     => 'required|in:H,I,S,A',
-            'studi_id'   => 'required|exists:studis,id',
-        ]);
+   // di atas: use Illuminate\Validation\Rule;
 
-        // TOLAK update jika hari sudah terkunci
-        if ($this->isLocked($request->input('tanggal'))) {
-            return response()->json([
-                'message' => 'Absensi untuk tanggal tersebut sudah dikunci. Perubahan tidak diizinkan.'
-            ], 423); // 423 Locked
-        }
+public function updateOrCreate(Request $request)
+{
+    $request->validate([
+        'student_id' => [
+            'required',
+            Rule::exists('students', 'id')->where(fn($q) =>
+                $q->where('ekskul_id', $request->input('ekskul_id'))
+            ),
+        ],
+        'ekskul_id'  => 'required|exists:ekskuls,id',
+        'tanggal'    => 'required|date_format:Y-m-d',
+        'status'     => 'required|in:H,I,S,A',
+        'studi_id'   => 'required|exists:studis,id',
+    ]);
 
-        $absen = EkskulAttendances::updateOrCreate(
-            [
-                'student_id' => $request->student_id,
-                'ekskul_id'  => $request->ekskul_id,
-                'tanggal'    => $request->tanggal,
-                'studi_id'   => $request->studi_id,
-            ],
-            [
-                'status'     => $request->status,
-            ]
-        );
-
-        return response()->json($absen);
+    if ($this->isLocked($request->input('tanggal'))) {
+        return response()->json([
+            'message' => 'Absensi untuk tanggal tersebut sudah dikunci. Perubahan tidak diizinkan.'
+        ], 423);
     }
+
+    $absen = EkskulAttendances::updateOrCreate(
+        [
+            'student_id' => $request->student_id,
+            'ekskul_id'  => $request->ekskul_id,
+            'tanggal'    => $request->tanggal,
+            'studi_id'   => $request->studi_id,
+        ],
+        ['status' => $request->status]
+    );
+
+    return response()->json($absen);
+}
+
 
 
 public function rekap(Request $r)
