@@ -34,4 +34,7 @@ class Ekskul extends Model
    public function lombad() {
     return $this->hasMany(Lombad::class);
    }
+    public function user() {
+    return $this->hasMany(User::class);
+   }
 }
