@@ -8,7 +8,7 @@ use App\Http\Controllers\API\IndividuRaceParticipansController;
 use App\Http\Controllers\API\LombadController;
 use App\Http\Controllers\API\SertifikationController;
 use App\Http\Controllers\API\StudentController;
-use App\Http\Controllers\Api\TeamRaceController;
+use App\Http\Controllers\API\TeamRaceController;
 use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\StudiController;
 use Illuminate\Http\Request;
