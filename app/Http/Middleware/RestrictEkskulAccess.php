@@ -33,14 +33,14 @@ class RestrictEkskulAccess
             if ($routeParam) {
                 $routeEkskulId = $routeParam instanceof Ekskul ? (int) $routeParam->id : (int) $routeParam;
                 if ($routeEkskulId !== $owned) {
-                    return response()->json(['message' => 'Tidak boleh mengakses ekskul lain.'], 403);
+                    return response()->json(['message' => 'Anda tidak di izinkan mengakses ekskul ini.'], 403);
                 }
             }
 
             // Jika ada ekskul_id di input/query, harus sama
             if ($request->has('ekskul_id')) {
                 if ((int) $request->input('ekskul_id') !== $owned) {
-                    return response()->json(['message' => 'Tidak boleh mengakses ekskul lain.'], 403);
+                    return response()->json(['message' => 'Anda tidak di izinkan mengakses ekskul ini.'], 403);
                 }
             }
 
