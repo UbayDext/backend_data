@@ -36,7 +36,7 @@ class User extends Authenticatable
         'remember_token',
     ];
     protected $casts = [
-        'eskul_id' => 'integer'
+        'ekskul_id' => 'integer'
     ];
 
 
