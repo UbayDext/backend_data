@@ -85,7 +85,7 @@ class UserController extends Controller
         if ($validated['role'] === 'guru_ekskul' && empty($validated['ekskul_id'])) {
             return response()->json([
                 'success' => false,
-                'message' => 'ekskul_id wajib untuk role guru_ekskul',
+                'message' => 'ekskul_id wajib untuk role guru ekskul',
             ], 422);
         }
 
@@ -132,7 +132,7 @@ class UserController extends Controller
             'email'     => ['sometimes','required','string','email','max:255', Rule::unique('users','email')->ignore($user->id)],
             'password'  => ['nullable','string','min:6','confirmed'],
             // Hanya admin boleh ubah role/ekskul_id
-            'role'      => [$this->isAdmin($actor) ? 'sometimes' : 'prohibited','in:admin,guru_ekskul'],
+            'role'      => [$this->isAdmin($actor) ? 'sometimes' : 'prohibited','in:admin,guru ekskul'],
             'ekskul_id' => [$this->isAdmin($actor) ? 'sometimes' : 'prohibited','nullable','integer','exists:ekskuls,id'],
         ]);
 
@@ -141,7 +141,7 @@ class UserController extends Controller
             if (!array_key_exists('ekskul_id',$validated) && !$user->ekskul_id) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'ekskul_id wajib untuk role guru_ekskul',
+                    'message' => 'ekskul_id wajib untuk role guru ekskul',
                 ], 422);
             }
         }
