@@ -35,6 +35,9 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+    protected $casts = [
+        'eskul_id' => 'integer'
+    ];
 
 
     /**
