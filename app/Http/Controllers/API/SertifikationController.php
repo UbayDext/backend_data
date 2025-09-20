@@ -170,23 +170,23 @@ class SertifikationController extends Controller
         $perPage = min($request->integer('per_page', 15), 100);
 
         $q = Student::query()
-            ->with([
-                'classroom:id,name',
-                'ekskul:id,nama_ekskul',
-                'studi:id,name',
-                // include satu sertifikat terbaru
-                'latestSertifikation:id,student_id,title,file_path,created_at',
-            ])
-            ->withCount('sertifikations')
-            ->whereHas('sertifikations', function ($sq) use ($request) {
-                $from = $request->date('from');
-                $to   = $request->date('to');
-                if ($from || $to) {
-                    if ($from && $to)  $sq->whereBetween('created_at', [$from, $to]);
-                    elseif ($from)     $sq->whereDate('created_at', '>=', $from);
-                    else               $sq->whereDate('created_at', '<=', $to);
-                }
-            });
+    ->with([
+        'classroom:id,name',
+        'ekskul:id,nama_ekskul',
+        // ubah ini:
+        // 'studi:id,name',
+        'studi:id,nama_studi',
+        'latestSertifikation:id,student_id,title,file_path,created_at',
+    ])
+    ->withCount('sertifikations')
+    ->whereHas('sertifikations', function ($sq) use ($request) {
+        $from = $request->date('from');
+        $to   = $request->date('to');
+        if ($from && $to)      $sq->whereBetween('created_at', [$from, $to]);
+        elseif ($from)         $sq->whereDate('created_at', '>=', $from);
+        elseif ($to)           $sq->whereDate('created_at', '<=', $to);
+    });
+
 
         if ($request->filled('classroom_id')) $q->where('classroom_id', $request->integer('classroom_id'));
         if ($request->filled('ekskul_id'))    $q->where('ekskul_id',    $request->integer('ekskul_id'));
