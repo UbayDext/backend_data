@@ -30,11 +30,6 @@ class Student extends Model
     public function ekskul() {
         return $this->belongsTo(Ekskul::class);
     }
-public function sertifikats()
-{
-    return $this->belongsToMany(Sertifikation::class, 'sertifikat_student')
-        ->withTimestamps();
-}
 
    public function sertifikations()
 {

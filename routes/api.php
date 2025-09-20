@@ -42,7 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Filter
     Route::get('students/classroom/{classroom_id}', [StudentController::class, 'byClassroom']);
     Route::get('students/ekskul/{ekskul_id}', [StudentController::class, 'byEkskul']);
-Route::get('/students/with-sertifikat', [StudentController::class, 'withSertifikat']);
+    Route::get('/students/with-sertifikat', [StudentController::class, 'withSertifikat']);
 
 
 
