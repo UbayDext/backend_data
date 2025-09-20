@@ -49,6 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('sertifikations', SertifikationController::class);
+    Route::get('ping', fn() => response()->json(['ok' => true]));
     Route::get('sertifikations/by-student/{student}', [SertifikationController::class, 'byStudent']);
     Route::get('sertifikations-counts', [SertifikationController::class, 'counts']);
     Route::get('sertifikations/students-latest', [SertifikationController::class, 'studentsWithCertificateLatest'])
