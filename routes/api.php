@@ -43,13 +43,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('students/classroom/{classroom_id}', [StudentController::class, 'byClassroom']);
     Route::get('students/ekskul/{ekskul_id}', [StudentController::class, 'byEkskul']);
     Route::get('/students/with-sertifikat', [StudentController::class, 'withSertifikat']);
-    Route::apiResource('students', StudentController::class)->except(['show']);
-    Route::get('students/{id}', [StudentController::class, 'show'])->whereNumber('id');
 
 
 
     // CRUD
-    // Route::apiResource('students', StudentController::class);
+    Route::apiResource('students', StudentController::class);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
