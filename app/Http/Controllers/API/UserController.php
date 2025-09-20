@@ -124,7 +124,7 @@ class UserController extends Controller
 {
     try {
         $actor = $request->user();
-        // Hanya admin boleh ubah user lain; self masih boleh ubah profil dasar
+   
         $this->ensureAdminOrSelf($actor, $user);
 
         $validated = $request->validate([
