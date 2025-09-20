@@ -31,10 +31,16 @@ class Student extends Model
         return $this->belongsTo(Ekskul::class);
     }
 
-   public function sertifikations()
+public function sertifikations()
 {
     return $this->hasMany(\App\Models\Sertifikation::class, 'student_id');
 }
+
+public function latestSertifikation()
+{
+    return $this->hasOne(\App\Models\Sertifikation::class, 'student_id')->latestOfMany();
+}
+
    public function ekskulAttendances() {
     return $this->hasMany(EkskulAttendances::class);
    }
@@ -50,10 +56,6 @@ class Student extends Model
     {
         return $this->name . ' (' . $this->classroom->name . ')';
     }
-   public function latestSertifikation()
-{
-    return $this->hasOne(\App\Models\Sertifikation::class, 'student_id')->latestOfMany();
-}
     public function raceParticipants()
 {
     return $this->hasMany(\App\Models\IndividuRaceParticipan::class, 'student_id');

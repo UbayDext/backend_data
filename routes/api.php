@@ -42,10 +42,6 @@ Route::middleware('auth:sanctum')->group(function () {
     // Filter
     Route::get('students/classroom/{classroom_id}', [StudentController::class, 'byClassroom']);
     Route::get('students/ekskul/{ekskul_id}', [StudentController::class, 'byEkskul']);
-    Route::get('students-filters/with-sertifikat', [StudentController::class, 'withSertifikat']);
-
-
-
 
     // CRUD
     Route::apiResource('students', StudentController::class);
@@ -55,6 +51,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('sertifikations', SertifikationController::class);
     Route::get('sertifikations/by-student/{student}', [SertifikationController::class, 'byStudent']);
     Route::get('sertifikations-counts', [SertifikationController::class, 'counts']);
+    Route::get('sertifikations/students-latest', [SertifikationController::class, 'studentsWithCertificateLatest'])
+        ->name('sertifikations.students-latest');
+    Route::get('sertifikations/students', [SertifikationController::class, 'studentsWithCertificate'])
+        ->name('sertifikations.students');
 });
 Route::middleware('auth:sanctum', 'restrict.ekskul')->group(function() {
     Route::get('ekskul-attendance/daily', [EkskulAttendancesController::class, 'dailyAll']);

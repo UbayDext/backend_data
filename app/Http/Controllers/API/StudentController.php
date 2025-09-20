@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use App\Models\Student;
 use App\Models\Classroom;
 use App\Models\Ekskul;
-use App\Models\Sertifikation;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
@@ -361,50 +360,4 @@ public function importMany(Request $request)
             'data'=>$students
         ]);
     }
-
-public function withSertifikat(Request $request)
-{
-    $perPage = min($request->integer('per_page', 15), 100);
-
-    $q = Student::query()
-        ->with([
-            'classroom:id,name',
-            'ekskul:id,nama_ekskul',
-            'studi:id,name',
-        ])
-        ->withCount('sertifikations')
-        ->whereHas('sertifikations', function ($sq) use ($request) {
-            $from = $request->date('from');
-            $to   = $request->date('to');
-            if ($from || $to) {
-                $sq->betweenDate($from, $to);
-            }
-        });
-
-    // filter tambahan (opsional)
-    if ($request->filled('classroom_id')) $q->where('classroom_id', $request->integer('classroom_id'));
-    if ($request->filled('ekskul_id'))    $q->where('ekskul_id',    $request->integer('ekskul_id'));
-    if ($request->filled('studi_id'))     $q->where('studi_id',     $request->integer('studi_id'));
-    if ($request->filled('search')) {
-        $search = strtolower($request->string('search'));
-        $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
-    }
-
-    $page = $q->orderBy('name')->paginate($perPage);
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Daftar siswa yang memiliki sertifikat',
-        'meta'    => [
-            'total'        => $page->total(),
-            'per_page'     => $page->perPage(),
-            'current_page' => $page->currentPage(),
-            'last_page'    => $page->lastPage(),
-        ],
-        'data'    => $page->items(),
-    ]);
-}
-
-
-
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\SertifikationResource;
 use App\Models\Sertifikation;
+use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
@@ -118,5 +119,95 @@ class SertifikationController extends Controller
             ->latest();
 
         return SertifikationResource::collection($q->paginate($r->get('per_page', 15)));
+    }
+    public function studentsWithCertificate(Request $request)
+    {
+        $perPage = min($request->integer('per_page', 15), 100);
+
+        $q = Student::query()
+            ->with([
+                'classroom:id,name',
+                'ekskul:id,nama_ekskul',
+                'studi:id,name',
+            ])
+            ->withCount('sertifikations') // hitung jumlah sertifikat per siswa
+            ->whereHas('sertifikations', function ($sq) use ($request) {
+                $from = $request->date('from');
+                $to   = $request->date('to');
+                if ($from || $to) {
+                    // filter di tabel sertifikations (created_at)
+                    if ($from && $to)  $sq->whereBetween('created_at', [$from, $to]);
+                    elseif ($from)     $sq->whereDate('created_at', '>=', $from);
+                    else               $sq->whereDate('created_at', '<=', $to);
+                }
+            });
+
+        // filter di tabel students
+        if ($request->filled('classroom_id')) $q->where('classroom_id', $request->integer('classroom_id'));
+        if ($request->filled('ekskul_id'))    $q->where('ekskul_id',    $request->integer('ekskul_id'));
+        if ($request->filled('studi_id'))     $q->where('studi_id',     $request->integer('studi_id'));
+        if ($request->filled('search')) {
+            $search = strtolower((string) $request->input('search'));
+            $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
+        }
+
+        $page = $q->orderBy('name')->paginate($perPage);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Daftar siswa yang memiliki sertifikat',
+            'meta'    => [
+                'total'        => $page->total(),
+                'per_page'     => $page->perPage(),
+                'current_page' => $page->currentPage(),
+                'last_page'    => $page->lastPage(),
+            ],
+            'data'    => $page->items(),
+        ]);
+    }
+    public function studentsWithCertificateLatest(Request $request)
+    {
+        $perPage = min($request->integer('per_page', 15), 100);
+
+        $q = Student::query()
+            ->with([
+                'classroom:id,name',
+                'ekskul:id,nama_ekskul',
+                'studi:id,name',
+                // include satu sertifikat terbaru
+                'latestSertifikation:id,student_id,title,file_path,created_at',
+            ])
+            ->withCount('sertifikations')
+            ->whereHas('sertifikations', function ($sq) use ($request) {
+                $from = $request->date('from');
+                $to   = $request->date('to');
+                if ($from || $to) {
+                    if ($from && $to)  $sq->whereBetween('created_at', [$from, $to]);
+                    elseif ($from)     $sq->whereDate('created_at', '>=', $from);
+                    else               $sq->whereDate('created_at', '<=', $to);
+                }
+            });
+
+        if ($request->filled('classroom_id')) $q->where('classroom_id', $request->integer('classroom_id'));
+        if ($request->filled('ekskul_id'))    $q->where('ekskul_id',    $request->integer('ekskul_id'));
+        if ($request->filled('studi_id'))     $q->where('studi_id',     $request->integer('studi_id'));
+        if ($request->filled('search')) {
+            $search = strtolower((string) $request->input('search'));
+            $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
+        }
+
+        $page = $q->orderBy('name')->paginate($perPage);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Daftar siswa yang memiliki sertifikat (dengan sertifikat terbaru)',
+            'meta'    => [
+                'total'        => $page->total(),
+                'per_page'     => $page->perPage(),
+                'current_page' => $page->currentPage(),
+                'last_page'    => $page->lastPage(),
+            ],
+            'data'    => $page->items(),
+        ]);
     }
 }
