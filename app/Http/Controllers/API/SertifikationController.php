@@ -165,49 +165,57 @@ class SertifikationController extends Controller
             'data'    => $page->items(),
         ]);
     }
-    public function studentsWithCertificateLatest(Request $request)
-    {
-        $perPage = min($request->integer('per_page', 15), 100);
+  public function studentsWithCertificateLatest(Request $request)
+{
+    $perPage = min($request->integer('per_page', 15), 100);
 
-        $q = Student::query()
-    ->with([
-        'classroom:id,name',
-        'ekskul:id,nama_ekskul',
-        // ubah ini:
-        // 'studi:id,name',
-        'studi:id,nama_studi',
-        'latestSertifikation:id,student_id,title,file_path,created_at',
-    ])
-    ->withCount('sertifikations')
-    ->whereHas('sertifikations', function ($sq) use ($request) {
-        $from = $request->date('from');
-        $to   = $request->date('to');
-        if ($from && $to)      $sq->whereBetween('created_at', [$from, $to]);
-        elseif ($from)         $sq->whereDate('created_at', '>=', $from);
-        elseif ($to)           $sq->whereDate('created_at', '<=', $to);
-    });
+    $q = Student::query()
+        ->with([
+            'classroom:id,name',
+            'ekskul:id,nama_ekskul',
+            // kolom Studi yang benar
+            'studi:id,nama_studi',
+            // <- penting: pakai closure agar kolom dari tabel sertifikations diprefix
+            'latestSertifikation' => function ($q2) {
+                $q2->select(
+                    'sertifikations.id',
+                    'sertifikations.student_id',   // diprefix -> tidak ambigu
+                    'sertifikations.title',
+                    'sertifikations.file_path',
+                    'sertifikations.created_at'
+                );
+            },
+        ])
+        ->withCount('sertifikations')
+        ->whereHas('sertifikations', function ($sq) use ($request) {
+            $from = $request->date('from');
+            $to   = $request->date('to');
+            if ($from && $to)      $sq->whereBetween('created_at', [$from, $to]);
+            elseif ($from)         $sq->whereDate('created_at', '>=', $from);
+            elseif ($to)           $sq->whereDate('created_at', '<=', $to);
+        });
 
-
-        if ($request->filled('classroom_id')) $q->where('classroom_id', $request->integer('classroom_id'));
-        if ($request->filled('ekskul_id'))    $q->where('ekskul_id',    $request->integer('ekskul_id'));
-        if ($request->filled('studi_id'))     $q->where('studi_id',     $request->integer('studi_id'));
-        if ($request->filled('search')) {
-            $search = strtolower((string) $request->input('search'));
-            $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
-        }
-
-        $page = $q->orderBy('name')->paginate($perPage);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Daftar siswa yang memiliki sertifikat (dengan sertifikat terbaru)',
-            'meta'    => [
-                'total'        => $page->total(),
-                'per_page'     => $page->perPage(),
-                'current_page' => $page->currentPage(),
-                'last_page'    => $page->lastPage(),
-            ],
-            'data'    => $page->items(),
-        ]);
+    if ($request->filled('classroom_id')) $q->where('classroom_id', $request->integer('classroom_id'));
+    if ($request->filled('ekskul_id'))    $q->where('ekskul_id',    $request->integer('ekskul_id'));
+    if ($request->filled('studi_id'))     $q->where('studi_id',     $request->integer('studi_id'));
+    if ($request->filled('search')) {
+        $search = strtolower((string) $request->input('search'));
+        $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
     }
+
+    $page = $q->orderBy('name')->paginate($perPage);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Daftar siswa yang memiliki sertifikat (dengan sertifikat terbaru)',
+        'meta'    => [
+            'total'        => $page->total(),
+            'per_page'     => $page->perPage(),
+            'current_page' => $page->currentPage(),
+            'last_page'    => $page->lastPage(),
+        ],
+        'data'    => $page->items(),
+    ]);
+}
+
 }
