@@ -36,7 +36,7 @@ public function sertifikats()
         ->withTimestamps();
 }
 
-    public function sertifikations()
+   public function sertifikations()
 {
     return $this->hasMany(\App\Models\Sertifikation::class, 'student_id');
 }
@@ -55,7 +55,7 @@ public function sertifikats()
     {
         return $this->name . ' (' . $this->classroom->name . ')';
     }
-    public function latestSertifikation()
+   public function latestSertifikation()
 {
     return $this->hasOne(\App\Models\Sertifikation::class, 'student_id')->latestOfMany();
 }
@@ -64,4 +64,5 @@ public function sertifikats()
     return $this->hasMany(\App\Models\IndividuRaceParticipan::class, 'student_id');
     // atau IndividuRaceParticipant::class jika kamu pakai nama yg benar
 }
+
 }
